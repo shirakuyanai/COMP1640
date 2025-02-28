@@ -9,6 +9,7 @@ import { Log, logError } from './logger.js'
 import User from '../schema/User.js'
 import UserRole from '../schema/UserRole.js'
 import { eq } from 'drizzle-orm'
+import Role from '../schema/Role.js'
 
 /**
  * Generate a token when logging in.
@@ -20,7 +21,7 @@ const generateToken = async (user) => {
 	try {
 		// Return the role of the selected user
 		const userRole = await db
-			.select({ roleId: UserRole.roleId })
+			.select()
 			.from(UserRole)
 			.where(eq(UserRole.userId, user.userId))
 			.limit(1)
@@ -40,7 +41,7 @@ const generateToken = async (user) => {
 		}
 
 		// No secret key = bye bye
-		const secretKey = process.env.JWT_KEY
+		const secretKey = process.env.JWT_SECRET_KEY
 		if (!secretKey) {
 			return {
 				status: 500,
@@ -51,11 +52,33 @@ const generateToken = async (user) => {
 			}
 		}
 
+		const role = await db
+			.select()
+			.from(Role)
+			.where(eq(Role.roleId, userRole[0].roleId))
+
+		if (!role[0] || role.length === 0) {
+			logError('generate an authentication token', 'User has invalid role')
+			return {
+				status: 401,
+				item: 'User has invalid role',
+			}
+		}
+
 		// How long the token will last
 		// For development sake, keep it at 24 hours
-		const options = { expiresIn: '24h' }
+		// For production, keep it at 14 days
+		const options = {
+			expiresIn: process.env.NODE_ENV !== 'production' ? '24h' : '14d',
+		}
 
-		return { status: 200, item: jwt.sign(payload, secretKey, options) }
+		return {
+			status: 200,
+			item: {
+				jwt: jwt.sign(payload, secretKey, options),
+				role: role[0].roleName,
+			},
+		}
 	} catch (err) {
 		return {
 			status: 500,
@@ -167,14 +190,14 @@ const ValidateInputLogin = async (req, res) => {
 		}
 		return { status: 200, item: user }
 	} catch (err) {
-		return { status: 500, item: logError('validate credentials', err) }
+		return { status: 500, item: logError('validate login credentials', err) }
 	}
 }
 ///////////////////////////////////
 
 const decodeToken = async (token) => {
 	try {
-		if (!process.env.JWT_KEY)
+		if (!process.env.JWT_SECRET_KEY)
 			return {
 				status: 500,
 				item: logError(`decode token`, 'No token encryption key found.'),
@@ -186,34 +209,13 @@ const decodeToken = async (token) => {
 				item: logError(`decode token`, 'No token provided.'),
 			}
 
-		const db_token = (
-			await db.select().from(Token).where(eq(Token.value, token)).limit(1)
-		)[0]
+		const payloadFromToken = await PayloadFromToken(token)
 
-		if (!db_token) {
-			if (
-				process.env.NODE_ENV !== 'production' &&
-				process.env.NODE_ENV !== 'test'
-			)
-				console.log('Invalid token.')
-			return { status: 401, item: 'Invalid token.' }
+		if (payloadFromToken.status === 200) {
+			Log(`Token decoded successfully: ${token}`)
+		} else {
+			logError(`decode token`, payloadFromToken.item)
 		}
-
-		if (db_token.revoked) {
-			if (
-				process.env.NODE_ENV !== 'production' &&
-				process.env.NODE_ENV !== 'test'
-			)
-				return {
-					status: 401,
-					item: logError('decode token', 'This token has been revoked.'),
-				}
-		}
-
-		Log(`Token decoded successfully: ${token}`)
-
-		const payloadFromToken = await PayloadFromToken(db_token.value)
-
 		return { status: payloadFromToken.status, item: payloadFromToken.item }
 	} catch (err) {
 		return { status: 500, item: logError('decode token', err) }
@@ -286,6 +288,20 @@ export const alreadyLoggedIn = async (req, res, next) => {
 }
 ///////////////////////////////////
 
+export const staffOnly = (req, res, next) => {
+	if (req.user.role !== '9c048d7e-ef25-42fa-a496-23b0292ac96d') {
+		return res.status(401).json({ message: 'Unauthorized' })
+	}
+	next()
+}
+
+export const staffNotAllowed = (req, res, next) => {
+	if (req.user.role === '9c048d7e-ef25-42fa-a496-23b0292ac96d') {
+		return res.status(401).json({ message: 'Unauthorized' })
+	}
+	next()
+}
+
 /**
  * Authenticate apps that make requests to the server using an API
  *
@@ -310,7 +326,7 @@ export const authenticateApp = (req, res, next) => {
  */
 const PayloadFromToken = async (token) => {
 	try {
-		if (!process.env.JWT_KEY)
+		if (!process.env.JWT_SECRET_KEY)
 			return {
 				status: 500,
 				item: logError(
@@ -320,7 +336,7 @@ const PayloadFromToken = async (token) => {
 			}
 		const data = await jwt.verify(
 			token,
-			process.env.JWT_KEY,
+			process.env.JWT_SECRET_KEY,
 			(err, decoded) => {
 				if (err) {
 					if (err.message === 'invalid token' || err.message === 'jwt expired')

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
 import { getDataForCreatingClass } from '@/actions/getData'
 import { AddNewClass } from '@/actions/postData'
+import { useGlobalState } from '@/misc/GlobalStateContext'
 
 function ClassUpdateForm({
 	class_detail,
@@ -49,14 +50,16 @@ function ClassUpdateForm({
 		tutors: [],
 	})
 
+	const { authToken } = useGlobalState()
+
 	const getData = async () => {
-		const data = await getDataForCreatingClass()
+		const data = await getDataForCreatingClass(authToken)
 		setStudentsAndTutors(data)
 	}
 
 	useEffect(() => {
 		getData()
-	})
+	}, [])
 
 	return (
 		<Form {...form}>

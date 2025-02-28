@@ -10,58 +10,61 @@ import StaffLayout from './Pages/Staff/layout'
 import ReallocateStudentPage from './Pages/Staff/Class/ReallocateStudentPage'
 import AddClass from './Pages/Staff/Class/AddClass'
 import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
+import { GlobalStateProvider } from './misc/GlobalStateContext'
 
 function App() {
 	return (
-		<Router>
-			<Routes>
-				<Route
-					index
-					path='/login'
-					element={<LoginPage />}
-				/>
-				<Route element={<Layout />}>
-					<Route
-						index
-						path='/'
-						element={<HomePage />}
-					/>
-					<Route
-						path='/dashboard/overview'
-						element={<OverViewPage />}
-					/>
-
-					<Route
-						index
-						path='/dashboard/classes'
-						element={<ClassPage />}
-					/>
-					<Route
-						index
-						path='/dashboard/classes/:id'
-						element={<ClassPage />}
-					/>
+		<GlobalStateProvider>
+			<Router>
+				<Routes>
 					<Route
 						path='*'
 						element={<NotFound />}
 					/>
-				</Route>
-				<Route element={<StaffLayout />}>
 					<Route
-						path='/staff'
-						element={<StaffDashboardPage />}
+						index
+						path='/login'
+						element={<LoginPage />}
 					/>
-					<Route
-						path='/staff/classes/new'
-						element={<AddClass />}
-					/>
-					<Route
-						path='/staff/reallocate'
-						element={<ReallocateStudentPage />}
-					/>
-				</Route>
-			</Routes>
-		</Router>
+					<Route element={<Layout />}>
+						<Route
+							index
+							path='/'
+							element={<HomePage />}
+						/>
+						<Route
+							path='/dashboard/overview'
+							element={<OverViewPage />}
+						/>
+
+						<Route
+							index
+							path='/dashboard/classes'
+							element={<ClassPage />}
+						/>
+						<Route
+							index
+							path='/dashboard/classes/:id'
+							element={<ClassPage />}
+						/>
+					</Route>
+					<Route element={<StaffLayout />}>
+						<Route
+							path='/staff'
+							element={<StaffDashboardPage />}
+						/>
+						<Route
+							path='/staff/classes/new'
+							element={<AddClass />}
+						/>
+						<Route
+							path='/staff/reallocate'
+							element={<ReallocateStudentPage />}
+						/>
+					</Route>
+				</Routes>
+			</Router>
+		</GlobalStateProvider>
 	)
 }
 

@@ -5,8 +5,10 @@ import { FaCalendar } from 'react-icons/fa6'
 import MenuButton from '@/components/MenuButton'
 import { FaGear } from 'react-icons/fa6'
 import { Link } from 'react-router-dom'
+import { useGlobalState } from '@/misc/GlobalStateContext'
 
 function StaffSidebar() {
+	const { currentUser } = useGlobalState()
 	return (
 		<div className='flex w-64 flex-col border border-l-0 border-t-0 h-screen fixed top-0 left-0 border-gray-300 gap-4 m-0 p-0'>
 			<div className='flex flex-col gap-2 p-5'>
@@ -27,8 +29,8 @@ function StaffSidebar() {
 					<div className='flex flex-row gap-4 align-middle items-center'>
 						<div className='border border-gray-200 rounded-full w-10 h-10 bg-gray-200'></div>
 						<div className='flex flex-col'>
-							<h4 className='text-sm font-semibold'>John Doe</h4>
-							<h4 className='text-sm'>Student</h4>
+							<h4 className='text-sm font-semibold'>{currentUser?.username}</h4>
+							<h4 className='text-sm'>{currentUser?.role.toUpperCase()}</h4>
 						</div>
 					</div>
 					<Link to='#'>

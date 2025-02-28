@@ -1,7 +1,24 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import StaffSidebar from '@/components/StaffSidebar'
+import { useEffect, useState } from 'react'
+import { useGlobalState } from '@/misc/GlobalStateContext'
 
 function StaffLayout() {
+	const { currentUser } = useGlobalState()
+	const navigate = useNavigate()
+
+	useEffect(() => {
+		if (currentUser) {
+			if (currentUser.role === 'staff') {
+				navigate('/staff')
+			} else {
+				navigate('/')
+			}
+		} else {
+			navigate('/login')
+		}
+	}, [currentUser])
+
 	return (
 		<div className='bg-accent/5 min-h-screen'>
 			<div className='flex flex-row'>
