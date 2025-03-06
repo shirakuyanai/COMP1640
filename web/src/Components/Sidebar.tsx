@@ -16,15 +16,15 @@ function Sidebar() {
 				<h1 className='text-2xl mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-700 font-bold'>
 					eTutoring
 				</h1>
-				<MenuButton href='#'>
+				<MenuButton href='/dashboard/overview'>
 					<FaHouse className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>Overview</p>
 				</MenuButton>
-				<MenuButton href='#'>
+				<MenuButton href='/dashboard/classes'>
 					<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>My Classes</p>
 				</MenuButton>
-				<MenuButton href='#'>
+				<MenuButton href='/dashboard/schedule'>
 					<FaCalendar className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>Schedule</p>
 				</MenuButton>

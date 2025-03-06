@@ -37,6 +37,8 @@ function LoginForm() {
 		})
 		if (response.error) {
 			alert(response.message)
+			setAuthToken()
+			localStorage.setItem('auth_token', '')
 		} else {
 			if (response.message.role === 'staff') {
 				navigate('/staff')
