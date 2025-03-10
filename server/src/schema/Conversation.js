@@ -5,17 +5,26 @@ import {
 	timestamp,
 	pgEnum,
 	primaryKey,
+	unique,
 } from 'drizzle-orm/pg-core'
 import User from './User.js'
 
-const Conversation = pgTable('conversation', {
-	id: uuid('id').defaultRandom().primaryKey(),
-	user1Id: uuid('user1Id')
-		.references(() => User.userId)
-		.notNull(),
-	user2Id: uuid('user2Id')
-		.references(() => User.userId)
-		.notNull(),
-})
+const Conversation = pgTable(
+	'conversation',
+	{
+		id: uuid('id').defaultRandom().unique().primaryKey(),
+		tutorId: uuid('tutorId')
+			.references(() => User.userId)
+			.notNull(),
+		studentId: uuid('studentId')
+			.references(() => User.userId)
+			.notNull(),
+	},
+	(table) => {
+		return {
+			uniqueTutorStudent: unique().on(table.tutorId, table.studentId),
+		}
+	},
+)
 
 export default Conversation

@@ -1,4 +1,4 @@
-import { uuid, pgTable, primaryKey } from 'drizzle-orm/pg-core'
+import { uuid, pgTable, primaryKey, unique } from 'drizzle-orm/pg-core'
 import User from './User.js'
 import Role from './Role.js'
 

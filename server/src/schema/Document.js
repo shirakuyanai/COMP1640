@@ -1,9 +1,9 @@
-import { uuid, text, pgTable, timestamp } from 'drizzle-orm/pg-core'
+import { uuid, text, pgTable, timestamp, unique } from 'drizzle-orm/pg-core'
 import Tutor from './Tutor.js'
 import Student from './Student.js'
 
 const Document = pgTable('document', {
-	documentId: uuid('documentId').defaultRandom().primaryKey(),
+	documentId: uuid('documentId').defaultRandom().unique().primaryKey(),
 	tutorId: uuid('tutorId')
 		.references(() => Tutor.tutorId)
 		.notNull(),

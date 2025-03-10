@@ -5,12 +5,13 @@ import {
 	timestamp,
 	pgEnum,
 	primaryKey,
+	unique,
 } from 'drizzle-orm/pg-core'
 import User from './User.js'
 import Post from './Post.js'
 
 const Comment = pgTable('comment', {
-	commentId: uuid('commentId').defaultRandom().primaryKey(),
+	commentId: uuid('commentId').defaultRandom().unique().primaryKey(),
 	postId: uuid('postId')
 		.references(() => Post.postId)
 		.notNull(),

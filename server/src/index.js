@@ -40,6 +40,7 @@ import {
 } from './lib/auth.js'
 import { addNewClass, getDataForCreatingClass } from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
+import { getConversation, getMessagesOfConversation } from './db/message.js'
 
 // Connect to the database first, then do everything else later
 connectToDatabase().then(() => {
@@ -76,6 +77,27 @@ connectToDatabase().then(() => {
 				tutorId: req.body.tutorId,
 				className: req.body.className,
 			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/getMessages',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			console.log(req.body)
+			const response = await getMessagesOfConversation(req.body)
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/getConversation',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getConversation(req.body)
 			res.status(response.status).json(response.item)
 		},
 	)

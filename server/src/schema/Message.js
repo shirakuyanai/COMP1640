@@ -5,12 +5,13 @@ import {
 	timestamp,
 	pgEnum,
 	primaryKey,
+	unique,
 } from 'drizzle-orm/pg-core'
 import User from './User.js'
 import Conversation from './Conversation.js'
 
 const Message = pgTable('message', {
-	messageId: uuid('messageId').defaultRandom().primaryKey(),
+	messageId: uuid('messageId').defaultRandom().unique().primaryKey(),
 	conversationId: uuid('conversationId')
 		.references(() => Conversation.id)
 		.notNull(),

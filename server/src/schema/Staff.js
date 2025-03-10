@@ -1,8 +1,8 @@
-import { uuid, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
+import { uuid, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import User from './User.js'
 
 const Staff = pgTable('staff', {
-	staffId: uuid('staffId').defaultRandom().primaryKey(),
+	staffId: uuid('staffId').defaultRandom().unique().primaryKey(),
 	userId: uuid('userId')
 		.references(() => User.userId)
 		.notNull(),
