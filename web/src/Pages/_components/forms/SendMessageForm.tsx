@@ -1,4 +1,4 @@
-import { Form } from '@/components/ui/form'
+import { Form } from '@/Components/ui/form'
 import { sendMessageSchema } from '@/schemas/message'
 import { zodResolver } from '@hookform/resolvers/zod'
 import React from 'react'

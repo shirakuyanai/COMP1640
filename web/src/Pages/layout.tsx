@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import Sidebar from '@/components/Sidebar'
+import Sidebar from '@/Components/Sidebar'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardDescription } from '@/Components/ui/card'
 import React from 'react'
 import { FaCalendar } from 'react-icons/fa6'
 import { FaClock } from 'react-icons/fa6'

@@ -10,10 +10,10 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import RequiredLabelIcon from '@/components/RequiredLabelIcon'
-import { Button } from '@/components/ui/button'
+} from '@/Components/ui/form'
+import { Input } from '@/Components/ui/input'
+import RequiredLabelIcon from '@/Components/RequiredLabelIcon'
+import { Button } from '@/Components/ui/button'
 import { useEffect, useState } from 'react'
 import { getDataForCreatingClass } from '@/actions/getData'
 import { AddNewClass } from '@/actions/postData'

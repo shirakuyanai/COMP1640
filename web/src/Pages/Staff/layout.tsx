@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import StaffSidebar from '@/components/StaffSidebar'
+import StaffSidebar from '@/Components/StaffSidebar'
 import { useEffect, useState } from 'react'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 

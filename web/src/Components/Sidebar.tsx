@@ -4,7 +4,7 @@ import { FaBookOpenReader } from 'react-icons/fa6'
 import { FaCalendar } from 'react-icons/fa6'
 import { FaGear } from 'react-icons/fa6'
 import { Link } from 'react-router-dom'
-import MenuButton from '@/components/MenuButton'
+import MenuButton from '@/Components/MenuButton'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 
 function Sidebar() {

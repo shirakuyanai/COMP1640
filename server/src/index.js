@@ -42,8 +42,60 @@ import { addNewClass, getDataForCreatingClass } from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
 import { getConversation, getMessagesOfConversation } from './db/message.js'
 
+import { Server } from 'socket.io'
+import http from 'http'
+
+const server = http.createServer(app)
+
+const io = new Server(server, {
+	cors: {
+		origin: '*',
+		methods: ['GET', 'POST'],
+	},
+})
+
+const usersSockets = {}
+
 // Connect to the database first, then do everything else later
 connectToDatabase().then(() => {
+	io.use((socket, next) => {
+		const username = socket.handshake.auth.username
+		console.log(`user ${username} connected`)
+		delete usersSockets[username]
+		usersSockets[username] = socket.id
+		socket.username = username
+		next()
+	})
+
+	io.on('connection', (socket) => {
+		socket.on('sendMessage', (messageData) => {
+			if (messageData.room) {
+				socket.broadcast
+					.to(messageData.room)
+					.emit('receiveMessage', messageData.encrypted_message)
+			} else {
+				io.emit('receiveMessage', messageData.encrypted_message)
+			}
+		})
+
+		socket.on('connectToUser', (recipient) => {
+			const room = [socket.username, recipient].sort().join('-')
+			io.to(usersSockets[recipient]).emit('receiveInvitation', room)
+			io.to(socket.id).emit('receiveInvitation', room)
+		})
+
+		socket.on('joinRoom', (room) => {
+			socket.room = room
+			socket.join(room)
+		})
+
+		socket.on('disconnect', () => {
+			console.log('user disconnected')
+
+			delete usersSockets[socket.username]
+		})
+	})
+
 	app.get('/', (req, res) => {
 		res.json('Congratulations, your server is up and running!')
 	})
@@ -120,5 +172,5 @@ connectToDatabase().then(() => {
 
 	//....
 
-	app.listen(PORT, () => console.log(`listening on port ${PORT}`))
+	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })
