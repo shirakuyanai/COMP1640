@@ -38,6 +38,7 @@ import {
 	hashPassword,
 	Login,
 } from './lib/auth.js'
+
 import {
 	addNewClass,
 	getClassById,
@@ -194,4 +195,5 @@ connectToDatabase().then(() => {
 	)
 
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
+
 })
