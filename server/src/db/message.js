@@ -135,7 +135,7 @@ const getMessages = async (conversationId) => {
 
 		if (!messages || messages.length === 0) {
 			logError('get messages', 'no messages found')
-			return { status: 200, item: 'no messages found' }
+			return { status: 200, item: [] }
 		}
 
 		Log('messages found')

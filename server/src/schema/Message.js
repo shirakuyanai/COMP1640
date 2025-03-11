@@ -18,9 +18,6 @@ const Message = pgTable('message', {
 	senderId: uuid('senderId')
 		.references(() => User.userId)
 		.notNull(),
-	recipientId: uuid('recipientId')
-		.references(() => User.userId)
-		.notNull(),
 	messageContent: text('messageContent').notNull(),
 	sendDate: timestamp('sendDate', { withTimezone: true })
 		.notNull()

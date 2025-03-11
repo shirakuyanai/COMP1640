@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import React, { useEffect, useState } from 'react'
-import LoginForm from './_components/forms/LoginForm'
+import LoginForm from '../_components/forms/LoginForm'
 import { redirect, useNavigate } from 'react-router-dom'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'

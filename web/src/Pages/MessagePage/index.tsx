@@ -22,6 +22,7 @@ const MessagePage: React.FC = () => {
 				token: authToken,
 				conversationId: found_conversation.id,
 			})
+
 			if (found_messages) setMessages(found_messages)
 		}
 	}
@@ -58,6 +59,10 @@ const MessagePage: React.FC = () => {
 				<div className='flex-1 p-4 overflow-y-auto'>
 					<div className='flex flex-col space-y-4'>
 						{/* Example message */}
+
+						{messages.length === 0 && (
+							<div className='text-center text-gray-500'>No messages yet</div>
+						)}
 						<div className='flex items-start space-x-2'>
 							<img
 								src='https://storage.googleapis.com/a1aa/image/dh0AmYifcf0VudUDHtqN8bwFEwYDcelC5fhSHMFLOYQ.jpg'
@@ -65,30 +70,67 @@ const MessagePage: React.FC = () => {
 								className='rounded-full w-10 h-10'
 							/>
 							<div>
-								<div className='bg-blue-500 text-white p-2 rounded-lg'>
-									<p>Good morning</p>
+								<div className='bg-purple-500 text-white p-2 rounded-lg lg:max-w-200'>
+									<p className='break-words'>Good morning</p>
 									<span className='text-xs text-gray-200'>10:00</span>
 								</div>
 								<span className='text-xs text-gray-500'>Patrick Hendricks</span>
 							</div>
 						</div>
+						<div className='flex justify-end space-x-2'>
+							<div>
+								<div className='bg-blue-500 text-white p-2 rounded-lg lg:max-w-200'>
+									<p className='break-words'>
+										Lorem ipsum dolor sit amet consectetur adipisicing elit. Est
+										nihil quisquam et enim libero ea eius, sapiente, saepe
+										dolorem at dolorum adipisci eaque quasi. Repudiandae atque
+										unde voluptatum dolore provident.
+									</p>
+									<span className='text-xs text-gray-200'>10:00</span>
+								</div>
+							</div>
+						</div>
+						{messages.length > 0 &&
+							messages.map((message, i) => (
+								<div
+									key={i}
+									className='flex items-start space-x-2'
+								>
+									<img
+										src='https://storage.googleapis.com/a1aa/image/dh0AmYifcf0VudUDHtqN8bwFEwYDcelC5fhSHMFLOYQ.jpg'
+										alt='Patrick Hendricks'
+										className='rounded-full w-10 h-10'
+									/>
+									<div>
+										<div className='bg-blue-500 text-white p-2 rounded-lg'>
+											<p>Good morning</p>
+											<span className='text-xs text-gray-200'>10:00</span>
+										</div>
+										<span className='text-xs text-gray-500'>
+											Patrick Hendricks
+										</span>
+									</div>
+								</div>
+							))}
 					</div>
 				</div>
 
 				{/* Message Input */}
-				<div className='p-4 border-t border-gray-200 flex items-center'>
-					<input
-						type='text'
-						placeholder='Enter Message...'
-						className='w-full p-2 border border-gray-300 rounded-lg'
-					/>
-					<button
-						title='Send message'
-						className='ml-2 bg-blue-500 text-white p-2 rounded-lg'
-					>
-						<i className='fas fa-paper-plane'></i>
-					</button>
-				</div>
+				<form>
+					<div className='p-4 border-t border-gray-200 flex items-center'>
+						<input
+							type='text'
+							placeholder='Enter Message...'
+							className='w-full p-2 border border-gray-300 rounded-lg'
+						/>
+						<button
+							title='Send message'
+							className='ml-2 bg-blue-500 text-white p-2 rounded-lg'
+						>
+							<i className='fas fa-paper-plane'></i>
+						</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	)
