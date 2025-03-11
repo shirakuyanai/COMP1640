@@ -5,6 +5,8 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { FaPaperPlane } from 'react-icons/fa6'
+
 const MessagePage: React.FC = () => {
 	const params = useParams()
 	const navigate = useNavigate()
@@ -194,7 +196,7 @@ const MessagePage: React.FC = () => {
 								title='Send message'
 								className='ml-2 bg-blue-500 text-white p-2 rounded-lg'
 							>
-								<i className='fas fa-paper-plane'></i>
+								<FaPaperPlane />
 							</button>
 						</div>
 					</form>
