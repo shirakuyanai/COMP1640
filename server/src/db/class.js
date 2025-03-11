@@ -53,6 +53,21 @@ export const getClassOfStudentAndTutor = async ({ studentId, tutorId }) => {
 	}
 }
 
+export const getClassById = async (classId) => {
+	try {
+		const data = await db.select().from(Class).where(eq(Class.id, classId))
+		if (!data || data.length === 0) {
+			logError('find class by id', 'class not found')
+			return { status: 404, error: 'class not found' }
+		}
+		Log('class found by id')
+		return { status: 200, item: data[0] }
+	} catch (err) {
+		logError('find class by id', err)
+		return { status: 500, error: err }
+	}
+}
+
 export const getDataForCreatingClass = async () => {
 	try {
 		const students = []

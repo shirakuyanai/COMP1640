@@ -66,7 +66,7 @@ export const getLoggedInUser = async (req, res) => {
 			}
 		}
 		const user = {
-			id: foundUser[0].id,
+			id: foundUser[0].userId,
 			email: foundUser[0].email,
 			username: foundUser[0].username,
 			role: role[0].roleName,

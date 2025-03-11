@@ -23,6 +23,7 @@ export const getConversation = async ({ conversationId, classId }) => {
 		logError('get conversation', 'no conversation or class id provided')
 		return { status: 401, item: 'no conversation or class id provided' }
 	}
+
 	let conversation = null
 	if (!conversationId) {
 		const found_conversation = await createConversation(classId)
@@ -54,7 +55,7 @@ export const createConversation = async (classId) => {
 			.from(Class)
 			.where(eq(Class.id, classId))
 		if (!found_class || found_class.length === 0)
-			return { status: 401, item: 'invalid class' }
+			return { status: 400, item: 'invalid class' }
 
 		const student = await db
 			.select()
@@ -62,7 +63,7 @@ export const createConversation = async (classId) => {
 			.where(eq(Student.studentId, found_class[0].studentId))
 
 		if (!student || student.length === 0)
-			return { status: 401, item: 'invalid student' }
+			return { status: 400, item: 'invalid student' }
 
 		const student_user = await db
 			.select()
@@ -70,7 +71,7 @@ export const createConversation = async (classId) => {
 			.where(eq(User.userId, student[0].userId))
 
 		if (!student_user || student_user.length === 0)
-			return { status: 401, item: 'invalid student' }
+			return { status: 400, item: 'invalid student' }
 
 		const tutor = await db
 			.select()
@@ -78,7 +79,7 @@ export const createConversation = async (classId) => {
 			.where(eq(Tutor.tutorId, found_class[0].tutorId))
 
 		if (!tutor || tutor.length === 0)
-			return { status: 401, item: 'invalid tutor' }
+			return { status: 400, item: 'invalid tutor' }
 
 		const tutor_user = await db
 			.select()
@@ -126,7 +127,6 @@ export const createConversation = async (classId) => {
 
 const getMessages = async (conversationId) => {
 	try {
-		console.log(conversationId)
 		const messages = await db
 			.select()
 			.from(Message)
@@ -134,7 +134,7 @@ const getMessages = async (conversationId) => {
 			.orderBy(Message.sendDate)
 
 		if (!messages || messages.length === 0) {
-			logError('get messages', 'no messages found')
+			Log('no messages found')
 			return { status: 200, item: [] }
 		}
 
@@ -142,6 +142,39 @@ const getMessages = async (conversationId) => {
 		return { status: 200, item: messages }
 	} catch (err) {
 		logError('get messages', err)
+		return { status: 500, item: err }
+	}
+}
+
+export const saveMessage = async ({
+	conversationId,
+	senderId,
+	messageContent,
+}) => {
+	try {
+		// console.log({
+		// 	conversationId,
+		// 	senderId,
+		// 	messageContent,
+		// })
+		const message = await db
+			.insert(Message)
+			.values({
+				conversationId,
+				senderId,
+				messageContent,
+			})
+			.returning()
+
+		if (!message || message.length === 0) {
+			logError('save message', 'message not saved')
+			return { status: 401, item: 'message not saved' }
+		}
+
+		Log('message saved')
+		return { status: 200, item: message[0] }
+	} catch (err) {
+		logError('save message', err)
 		return { status: 500, item: err }
 	}
 }

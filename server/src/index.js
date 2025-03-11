@@ -38,9 +38,17 @@ import {
 	hashPassword,
 	Login,
 } from './lib/auth.js'
-import { addNewClass, getDataForCreatingClass } from './db/class.js'
+import {
+	addNewClass,
+	getClassById,
+	getDataForCreatingClass,
+} from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
-import { getConversation, getMessagesOfConversation } from './db/message.js'
+import {
+	getConversation,
+	getMessagesOfConversation,
+	saveMessage,
+} from './db/message.js'
 
 import { Server } from 'socket.io'
 import http from 'http'
@@ -58,6 +66,7 @@ const usersSockets = {}
 
 // Connect to the database first, then do everything else later
 connectToDatabase().then(() => {
+	// Websocket for direct messaging
 	io.use((socket, next) => {
 		const username = socket.handshake.auth.username
 		console.log(`user ${username} connected`)
@@ -68,13 +77,18 @@ connectToDatabase().then(() => {
 	})
 
 	io.on('connection', (socket) => {
-		socket.on('sendMessage', (messageData) => {
+		socket.on('sendMessage', async (messageData) => {
 			if (messageData.room) {
+				const savedMessage = await saveMessage({
+					conversationId: messageData.message.conversationId,
+					senderId: messageData.message.senderId,
+					messageContent: messageData.message.messageContent,
+				})
 				socket.broadcast
 					.to(messageData.room)
-					.emit('receiveMessage', messageData.encrypted_message)
+					.emit('receiveMessage', messageData.message)
 			} else {
-				io.emit('receiveMessage', messageData.encrypted_message)
+				io.emit('receiveMessage', messageData.message)
 			}
 		})
 
@@ -138,7 +152,6 @@ connectToDatabase().then(() => {
 		authenticateApp,
 		authenticateToken,
 		async (req, res) => {
-			console.log(req.body)
 			const response = await getMessagesOfConversation(req.body)
 			res.status(response.status).json(response.item)
 		},
@@ -170,7 +183,15 @@ connectToDatabase().then(() => {
 		},
 	)
 
-	//....
+	app.get(
+		'/getClassById/:classId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getClassById(req.params.classId)
+			res.status(response.status).json(response.item)
+		},
+	)
 
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })
