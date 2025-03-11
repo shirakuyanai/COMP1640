@@ -152,11 +152,6 @@ export const saveMessage = async ({
 	messageContent,
 }) => {
 	try {
-		// console.log({
-		// 	conversationId,
-		// 	senderId,
-		// 	messageContent,
-		// })
 		const message = await db
 			.insert(Message)
 			.values({

@@ -95,8 +95,49 @@ export const getMessages = async ({
 	return data
 }
 
-export const getClassById = async (token: string, classId: string) => {
-	const url = `${import.meta.env.VITE_HOST}/getClassById/${classId}`
+export const getClassById = async ({
+	token,
+	classId,
+	userId,
+	role,
+}: {
+	token: string
+	classId: string
+	userId: string
+	role: string
+}) => {
+	const url = `${
+		import.meta.env.VITE_HOST
+	}/getClassById/${classId}/${userId}/${role}`
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authentication: `Bearer ${token}`,
+			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+		},
+	}
+
+	const response = await fetch(url, options)
+
+	if (response.status !== 200) {
+		return null
+	}
+	const data = await response.json()
+	return data
+}
+
+export const getClassesForUser = async ({
+	token,
+	userId,
+	role,
+}: {
+	token: string
+	userId: string
+	role: string
+}) => {
+	const url = `${import.meta.env.VITE_HOST}/getClassesForUser/${userId}/${role}`
 
 	const options = {
 		method: 'GET',
