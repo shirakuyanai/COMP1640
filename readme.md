@@ -57,3 +57,5 @@ npm run dev
 ```
 
 - Go to `http://localhost:3000` in your browser. If you see `Congratulations, your server is up and running!` and `Hello, world!`, everything is working correctly.
+
+- All users have the same password which is `123123`.
