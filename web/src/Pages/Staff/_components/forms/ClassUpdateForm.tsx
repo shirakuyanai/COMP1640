@@ -28,6 +28,8 @@ function ClassUpdateForm({
 		tutorId: string
 	}
 }) {
+	const { authToken } = useGlobalState()
+
 	const form = useForm<z.infer<typeof addClassSchema>>({
 		resolver: zodResolver(addClassSchema),
 		defaultValues: class_detail ?? {
@@ -38,7 +40,7 @@ function ClassUpdateForm({
 	})
 
 	const onSubmit = async (values: z.infer<typeof addClassSchema>) => {
-		const response = await AddNewClass(values)
+		const response = await AddNewClass(values, authToken)
 		if (response) alert('Class added successfully')
 	}
 
@@ -49,8 +51,6 @@ function ClassUpdateForm({
 		students: [],
 		tutors: [],
 	})
-
-	const { authToken } = useGlobalState()
 
 	const getData = async () => {
 		const data = await getDataForCreatingClass(authToken)
