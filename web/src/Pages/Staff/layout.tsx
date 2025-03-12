@@ -23,7 +23,7 @@ function StaffLayout() {
 		<div className='bg-accent/5 min-h-screen'>
 			<div className='flex flex-row'>
 				<StaffSidebar />
-				<div className='flex-1 ml-64 container p-15'>
+				<div className='flex-1 ml-64 container p-15 bg-gray-50'>
 					<Outlet />
 				</div>
 			</div>

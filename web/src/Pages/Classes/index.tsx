@@ -45,9 +45,9 @@ function ClassesPage() {
 							</div>
 							<div className='col-span-2'>
 								<CardDescription>
-									<h4 className='text-sm text-gray-500'>Classes today</h4>
+									<h4 className='text-sm text-gray-500'>Classes</h4>
 								</CardDescription>
-								<p className='text-2xl font-bold'>3</p>
+								<p className='text-2xl font-bold'>{classes.length}</p>
 							</div>
 						</div>
 					</CardContent>

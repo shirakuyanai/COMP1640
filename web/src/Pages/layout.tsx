@@ -24,7 +24,7 @@ function Layout() {
 		<div className='bg-accent/5 min-h-screen'>
 			<div className='flex flex-row'>
 				<Sidebar />
-				<div className='flex-1 ml-64 container'>
+				<div className='flex-1 ml-64 container bg-gray-50'>
 					<Outlet />
 				</div>
 			</div>

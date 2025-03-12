@@ -54,6 +54,7 @@ import {
 
 import { Server } from 'socket.io'
 import http from 'http'
+import { Log } from './lib/logger.js'
 
 const server = http.createServer(app)
 
@@ -71,7 +72,7 @@ connectToDatabase().then(() => {
 	// Websocket for direct messaging
 	io.use((socket, next) => {
 		const username = socket.handshake.auth.username
-		console.log(`user ${username} connected`)
+		Log(`user ${username} connected`)
 		delete usersSockets[username]
 		usersSockets[username] = socket.id
 		socket.username = username
@@ -106,7 +107,7 @@ connectToDatabase().then(() => {
 		})
 
 		socket.on('disconnect', () => {
-			console.log('user disconnected')
+			Log('user disconnected')
 
 			delete usersSockets[socket.username]
 		})
