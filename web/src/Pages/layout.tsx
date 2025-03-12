@@ -5,20 +5,20 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'
 
 function Layout() {
-	// 	const { currentUser } = useGlobalState()
-	// 	const navigate = useNavigate()
+	const { currentUser } = useGlobalState()
+	const navigate = useNavigate()
 
-	//   useEffect(() => {
-	// 	  if (currentUser) {
-	// 	 		if (currentUser.role === 'staff') {
-	// 	 			navigate('/staff')
-	// 	 		} else {
-	// 	 			navigate('/')
-	// 			}
-	// 		} else {
-	// 	 		navigate('/login')
-	// 		}
-	// 	}, [currentUser])
+	useEffect(() => {
+		if (!currentUser) {
+			navigate('/login')
+		} else if (currentUser.role === 'staff') {
+			navigate('/staff')
+		}
+	}, [currentUser, navigate])
+
+	if (!currentUser) {
+		return null
+	}
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>

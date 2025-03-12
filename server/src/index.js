@@ -69,6 +69,7 @@ const usersSockets = {}
 
 // Connect to the database first, then do everything else later
 connectToDatabase().then(() => {
+	
 	// Websocket for direct messaging
 	io.use((socket, next) => {
 		const username = socket.handshake.auth.username

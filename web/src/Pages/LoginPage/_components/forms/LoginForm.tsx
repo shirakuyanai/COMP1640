@@ -1,5 +1,5 @@
 import { LoginAPI } from '@/actions/postData'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/Components/ui/button'
 import {
 	Form,
 	FormControl,
@@ -7,21 +7,24 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+} from '@/Components/ui/form'
+import { Input } from '@/Components/ui/input'
 import { loginInfoSchema } from '@/schemas/login'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { redirect, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
 function LoginForm() {
-	const { authToken, setAuthToken } = useGlobalState()
+	const { setAuthToken } = useGlobalState()
 	const [showPassword, setShowPassword] = useState(false)
+	const [isLoading, setIsLoading] = useState(false)
+	const [error, setError] = useState('')
 	const navigate = useNavigate()
-	let form = useForm<z.infer<typeof loginInfoSchema>>({
+
+	const form = useForm<z.infer<typeof loginInfoSchema>>({
 		resolver: zodResolver(loginInfoSchema),
 		defaultValues: {
 			username: '',
@@ -30,41 +33,60 @@ function LoginForm() {
 	})
 
 	const onSubmit = async (values: z.infer<typeof loginInfoSchema>) => {
-		const response = await LoginAPI({
-			unsafeData: values,
-			token: authToken,
-			setAuthToken,
-		})
-		if (response.error) {
-			alert(response.message)
-			setAuthToken()
-			localStorage.setItem('auth_token', '')
-		} else {
-			if (response.message.role === 'staff') {
-				navigate('/staff')
+		try {
+			setIsLoading(true)
+			setError('')
+
+			const response = await LoginAPI({
+				unsafeData: values,
+				token: '',
+				setAuthToken,
+			})
+
+			if (response.error) {
+				setError(typeof response.message === 'string' ? response.message : 'Login failed. Please try again.')
+				setAuthToken('')
+				localStorage.removeItem('auth_token')
 			} else {
-				navigate('/')
+				// Successful login
+				if (response.message.role === 'staff') {
+					navigate('/staff')
+				} else {
+					navigate('/')
+				}
 			}
+		} catch (err) {
+			setError('An unexpected error occurred. Please try again.')
+			console.error('Login error:', err)
+		} finally {
+			setIsLoading(false)
 		}
 	}
 
 	return (
-		<div>
+		<div className="w-full max-w-md">
+			{error && (
+				<div className="mb-4 p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+					{error}
+				</div>
+			)}
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className='flex flex-col gap-4'
+					className="flex flex-col gap-4"
 				>
 					<FormField
 						control={form.control}
-						name='username'
+						name="username"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Username</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
-										className='h-12 w-100'
+										disabled={isLoading}
+										placeholder="Enter your username"
+										className="h-12"
 									/>
 								</FormControl>
 								<FormMessage />
@@ -73,21 +95,23 @@ function LoginForm() {
 					/>
 					<FormField
 						control={form.control}
-						name='password'
+						name="password"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Password</FormLabel>
 								<FormControl>
-									<div className='relative w-full flex items-center'>
+									<div className="relative">
 										<Input
 											{...field}
-											type={!showPassword ? 'password' : 'text'}
-											className='h-12 w-100'
+											type={showPassword ? 'text' : 'password'}
+											disabled={isLoading}
+											placeholder="Enter your password"
+											className="h-12 pr-20"
 										/>
 										<button
-											type='button'
+											type="button"
 											onClick={() => setShowPassword(!showPassword)}
-											className='absolute right-3 text-gray-500 cursor-pointer'
+											className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm"
 										>
 											{showPassword ? 'Hide' : 'Show'}
 										</button>
@@ -97,7 +121,13 @@ function LoginForm() {
 							</FormItem>
 						)}
 					/>
-					<Button className='h-12 cursor-pointer'>Login</Button>
+					<Button
+						type="submit"
+						className="h-12 bg-gradient-to-r from-purple-500 to-blue-700 text-white font-medium"
+						disabled={isLoading}
+					>
+						{isLoading ? 'Logging in...' : 'Login'}
+					</Button>
 				</form>
 			</Form>
 		</div>
