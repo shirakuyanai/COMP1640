@@ -34,7 +34,14 @@ const MessagePage: React.FC = () => {
 
 	const getData = async () => {
 		if (!params.id) navigate('/')
-		const found_class = await getClassById(authToken, params.id ?? '')
+		const found_class = await getClassById({
+			token: authToken,
+			classId: params.id ?? '',
+			userId: currentUser.id,
+			role: currentUser.role,
+		})
+
+		// const found_class = await getClassById(authToken, params.id ?? '')
 		if (!found_class) {
 			navigate('/')
 		} else {
@@ -73,8 +80,8 @@ const MessagePage: React.FC = () => {
 	}, [socket, conversation])
 
 	useEffect(() => {
-		getData()
-	}, [])
+		if (currentUser) getData()
+	}, [currentUser])
 
 	const [message, setMessage] = useState('')
 

@@ -1,7 +1,7 @@
 import { addClassSchema } from '@/schemas/class'
 import { loginInfoSchema } from '@/schemas/login'
 
-export const AddNewClass = async (unsafeData: any) => {
+export const AddNewClass = async (unsafeData: any, token: string) => {
 	try {
 		const { success, data } = addClassSchema.safeParse(unsafeData)
 
@@ -11,7 +11,10 @@ export const AddNewClass = async (unsafeData: any) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
+					Authentication: `Bearer ${token}`,
+					API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
 				},
+
 				body: JSON.stringify(data),
 			}
 			const response = await fetch(url, options)

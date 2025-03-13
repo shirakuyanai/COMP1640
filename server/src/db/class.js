@@ -45,20 +45,149 @@ export const getClassOfStudentAndTutor = async ({ studentId, tutorId }) => {
 			.select()
 			.from(Class)
 			.where(and(eq(Class.studentId, studentId), eq(Class.tutorId, tutorId)))
-		Log('class found with student and tutor')
+		Log('class found with user')
 		return { status: 200, item: data }
 	} catch (err) {
-		logError('find class with student and tutor', err)
+		logError('find class with user', err)
 		return { status: 500, error: err }
 	}
 }
 
-export const getClassById = async (classId) => {
+export const getClassesForUser = async (userId, role) => {
+	if (role !== 'student' && role !== 'tutor') {
+		logError('get classes for user', 'invalid role')
+		return { status: 400, error: 'invalid role' }
+	}
+	try {
+		let user = null
+		switch (role) {
+			case 'student': {
+				user = await db.select().from(Student).where(eq(Student.userId, userId))
+				break
+			}
+			case 'tutor': {
+				user = await db.select().from(Tutor).where(eq(Tutor.userId, userId))
+				break
+			}
+			default: {
+				return { status: 404, error: 'invalid user' }
+			}
+		}
+
+		if (!user || user.length === 0) {
+			logError('get classes for user', 'invalid user')
+			return { status: 404, error: 'invalid user' }
+		}
+
+		const user_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, userId))
+
+		if (!user_user || user_user.length === 0) {
+			logError('get classes for user', 'invalid user')
+			return { status: 404, error: 'invalid user' }
+		}
+
+		let data = await db
+			.select()
+			.from(Class)
+			.where(
+				role === 'student'
+					? eq(Class.studentId, user[0].studentId)
+					: eq(Class.tutorId, user[0].tutorId),
+			)
+
+		if (!data || data.length === 0) {
+			logError('find classes with user', 'classes not found')
+			return { status: 404, error: 'classes not found' }
+		}
+
+		let user2 = null
+		switch (role) {
+			case 'student': {
+				user2 = await db
+					.select()
+					.from(Tutor)
+					.where(eq(Tutor.tutorId, data[0].tutorId))
+				break
+			}
+			case 'tutor': {
+				user2 = await db
+					.select()
+					.from(Student)
+					.where(eq(Student.studentId, data[0].studentId))
+				break
+			}
+			default: {
+				return { status: 404, error: 'invalid user' }
+			}
+		}
+
+		if (!user2 || user2.length === 0) {
+			logError('get classes for user', 'invalid user')
+			return { status: 404, error: 'invalid user' }
+		}
+		const user2_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, user2[0].userId))
+
+		if (!user2_user || user2_user.length === 0) {
+			logError('get classes for user', 'invalid user')
+			return { status: 404, error: 'invalid user' }
+		}
+
+		const updatedData = data.map((current_class) => ({
+			...current_class,
+			studentUsername: user_user[0]?.username || 'Unknown Student',
+			tutorUsername: user2_user[0]?.username || 'Unknown Tutor',
+		}))
+
+		console.log(updatedData) // ✅ Logs transformed data
+
+		Log('classes found with user')
+
+		return {
+			status: 200,
+			item: updatedData,
+		}
+	} catch (err) {
+		logError('find classes with user', err)
+		return { status: 500, error: err }
+	}
+}
+
+export const getClassById = async ({ classId, userId, role }) => {
 	try {
 		const data = await db.select().from(Class).where(eq(Class.id, classId))
 		if (!data || data.length === 0) {
 			logError('find class by id', 'class not found')
 			return { status: 404, error: 'class not found' }
+		}
+		const user =
+			role === 'student'
+				? await db.select().from(Student).where(eq(Student.userId, userId))
+				: await db.select().from(Tutor).where(eq(Tutor.userId, userId))
+		if (!user || user.length === 0) {
+			logError('find class by id', 'invalid user')
+			return { status: 404, error: 'invalid user' }
+		}
+		switch (role) {
+			case 'student': {
+				if (data[0].studentId !== user[0].studentId) {
+					logError('find class by id', 'invalid user')
+					return { status: 404, error: 'invalid user' }
+				}
+				break
+			}
+			case 'tutor': {
+				if (data[0].tutorId !== user[0].tutorId) {
+					logError('find class by id', 'invalid user')
+					return { status: 404, error: 'invalid user' }
+				}
+				break
+			}
 		}
 		Log('class found by id')
 		return { status: 200, item: data[0] }

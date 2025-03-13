@@ -4,14 +4,15 @@ import Layout from './Pages/layout'
 import LoginPage from './Pages/LoginPage'
 import HomePage from './Pages/HomePage'
 import OverViewPage from './Pages/Overview'
-import ClassPage from './Pages/ClassPage'
+import ClassesPage from './Pages/Classes'
 import NotFound from '@/Components/NotFound'
 import StaffLayout from './Pages/Staff/layout'
 import ReallocateStudentPage from './Pages/Staff/Class/ReallocateStudentPage'
 import AddClass from './Pages/Staff/Class/AddClass'
 import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
 import { GlobalStateProvider } from './misc/GlobalStateContext'
-import MessagePage from './Pages/MessagePage'
+import MessagePage from './Pages/Classes/ClassPage/Message'
+import ClassPage from './Pages/Classes/ClassPage'
 
 function App() {
 	return (
@@ -41,7 +42,7 @@ function App() {
 						<Route
 							index
 							path='/dashboard/classes'
-							element={<ClassPage />}
+							element={<ClassesPage />}
 						/>
 						<Route
 							index

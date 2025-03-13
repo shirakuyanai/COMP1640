@@ -312,6 +312,7 @@ export const staffNotAllowed = (req, res, next) => {
  */
 export const authenticateApp = (req, res, next) => {
 	const apikey = req.headers.api?.replace('X-Api-Key ', '')
+	console.log(apikey)
 	if (apikey !== process.env.API_KEY)
 		return res.status(401).json('Unrecognized app.')
 	next()
