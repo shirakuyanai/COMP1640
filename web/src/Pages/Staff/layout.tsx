@@ -2,22 +2,55 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import StaffSidebar from '@/Components/StaffSidebar'
 import { useEffect, useState } from 'react'
 import { useGlobalState } from '@/misc/GlobalStateContext'
+import { getCurrentUser } from '@/actions/getData'
 
 function StaffLayout() {
-	const { currentUser } = useGlobalState()
+	const { currentUser, authToken, setCurrentUser } = useGlobalState()
 	const navigate = useNavigate()
+	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
-		if (currentUser) {
-			if (currentUser.role === 'staff') {
-				navigate('/staff')
-			} else {
-				navigate('/')
+		const checkAuth = async () => {
+			if (!authToken) {
+				setIsLoading(false)
+				navigate('/login')
+				return
 			}
-		} else {
-			navigate('/login')
+
+			try {
+				const user = await getCurrentUser(authToken)
+				if (!user) {
+					setIsLoading(false)
+					navigate('/login')
+					return
+				}
+
+				setCurrentUser(user)
+
+				if (user.role !== 'staff') {
+					setIsLoading(false)
+					navigate('/')
+					return
+				}
+
+				setIsLoading(false)
+			} catch (error) {
+				console.error('Auth check failed:', error)
+				setIsLoading(false)
+				navigate('/login')
+			}
 		}
-	}, [currentUser])
+
+		checkAuth()
+	}, [authToken, navigate, setCurrentUser])
+
+	if (isLoading) {
+		return <div>Loading...</div>
+	}
+
+	if (!currentUser || currentUser.role !== 'staff') {
+		return null
+	}
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>

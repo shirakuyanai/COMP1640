@@ -5,13 +5,14 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'
 
 function Layout() {
-	const { currentUser, authToken } = useGlobalState()
+	const { currentUser, authToken, setCurrentUser } = useGlobalState()
 	const navigate = useNavigate()
 	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
 		const checkAuth = async () => {
 			if (!authToken) {
+				setIsLoading(false)
 				navigate('/login')
 				return
 			}
@@ -19,25 +20,35 @@ function Layout() {
 			try {
 				const user = await getCurrentUser(authToken)
 				if (!user) {
+					setIsLoading(false)
 					navigate('/login')
-				} else if (user.role === 'staff') {
-					navigate('/staff')
+					return
 				}
-			} catch (error) {
-				navigate('/login')
-			} finally {
+				
+				setCurrentUser(user)
+				
+				if (user.role === 'staff') {
+					setIsLoading(false)
+					navigate('/staff')
+					return
+				}
+				
 				setIsLoading(false)
+			} catch (error) {
+				console.error('Auth check failed:', error)
+				setIsLoading(false)
+				navigate('/login')
 			}
 		}
 
 		checkAuth()
-	}, [authToken, navigate])
+	}, [authToken, navigate, setCurrentUser])
 
 	if (isLoading) {
 		return <div>Loading...</div>
 	}
 
-	if (!currentUser) {
+	if (!currentUser || currentUser.role === 'staff') {
 		return null
 	}
 
