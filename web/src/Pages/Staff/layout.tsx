@@ -15,7 +15,7 @@ function StaffLayout() {
 				navigate('/')
 			}
 		} else {
-			navigate('/login')
+			navigate('/staff')
 		}
 	}, [currentUser])
 

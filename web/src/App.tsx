@@ -13,6 +13,7 @@ import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
 import { GlobalStateProvider } from './misc/GlobalStateContext'
 import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
+import MeetingPage from './Pages/Staff/Class/MeetingPage'
 
 function App() {
 	return (
@@ -67,6 +68,10 @@ function App() {
 						<Route
 							path='/staff/reallocate'
 							element={<ReallocateStudentPage />}
+						/>
+						<Route
+							path='/staff/meeting'
+							element={<MeetingPage />}
 						/>
 					</Route>
 				</Routes>
