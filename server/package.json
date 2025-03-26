@@ -4,7 +4,7 @@
 	"description": "",
 	"main": "src/index.js",
 	"scripts": {
-		"test": "NODE_ENV=development nodemon --env-file=.env.local src/test",
+		"test": "nodemon --env-file=.env.local src/test",
 		"start": "node src/index",
 		"dev": "cross-env NODE_ENV=development nodemon --env-file=.env.local src/index",
 		"prod": "NODE_ENV=production nodemon --env-file=.env.production src/index",

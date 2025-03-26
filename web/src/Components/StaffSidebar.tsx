@@ -34,6 +34,10 @@ function StaffSidebar() {
 					<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>Reallocate student(s)</p>
 				</MenuButton>
+				<MenuButton href='/staff/meeting'>
+					<FaCalendar className='text-gray-600 h-5 w-5' />
+					<p className='text-sm'>Meetings</p>
+				</MenuButton>
 			</div>
 			<div className='fixed bottom-0 border border-l-0 border-r-0 border-b-0 border-gray-300 w-64 p-5'>
 				<div className='flex flex-col gap-4'>
