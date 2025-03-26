@@ -79,3 +79,28 @@ export const LoginAPI = async ({
 		}
 	}
 }
+
+export const LogoutAPI = async ({
+	setAuthToken,
+	setCurrentUser,
+}: {
+	setAuthToken: (token: string) => void
+	setCurrentUser: (user: any) => void
+}) => {
+	try {
+		// Clear auth token from localStorage
+		localStorage.removeItem('auth_token')
+		// Clear auth token from global state
+		setAuthToken('')
+		// Clear current user from global state
+		setCurrentUser(null)
+		
+		return { error: false, message: 'Logged out successfully' }
+	} catch (err) {
+		console.error('Logout error:', err)
+		return {
+			error: true,
+			message: 'An error occurred during logout. Please try again.',
+		}
+	}
+}
