@@ -1,5 +1,5 @@
 import React from 'react'
-import { FaHouse } from 'react-icons/fa6'
+import { FaHouse, FaChartLine } from 'react-icons/fa6'
 import { FaBookOpenReader } from 'react-icons/fa6'
 import { FaCalendar } from 'react-icons/fa6'
 import MenuButton from '@/Components/MenuButton'
@@ -26,6 +26,10 @@ function StaffSidebar() {
 				<h1 className='text-2xl mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-700 font-bold'>
 					<Link to='/staff'>eTutoring - Staff</Link>
 				</h1>
+				<MenuButton href='/staff'>
+					<FaChartLine className='text-gray-600 h-5 w-5' />{' '}
+					<p className='text-sm'>Dashboard</p>
+				</MenuButton>
 				<MenuButton href='/staff/classes/new'>
 					<FaHouse className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>Add a new class</p>

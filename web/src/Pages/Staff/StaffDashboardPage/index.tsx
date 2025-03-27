@@ -10,6 +10,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 type DetailViewType = 'overview' | 'classes' | 'students' | 'tutors' | 'performance' | null;
 
+type TutorWorkload = {
+	name: string;
+	classes: number;
+	students: number;
+}
+
 const COLORS = ['#8B5CF6', '#10B981', '#F59E0B', '#6366F1', '#3B82F6'];
 
 function StaffDashboardPage() {
@@ -25,7 +31,24 @@ function StaffDashboardPage() {
 		students: [],
 		tutors: []
 	})
-	const [dashboardData, setDashboardData] = useState({
+	const [dashboardData, setDashboardData] = useState<{
+		totalClasses: number;
+		activeClasses: number;
+		studentsWithoutClass: number;
+		totalStudents: number;
+		totalTutors: number;
+		recentActivities: any[];
+		classTrends: {
+			total: number;
+			active: number;
+			inactive: number;
+		};
+		studentTrends: {
+			assigned: number;
+			unassigned: number;
+		};
+		tutorWorkload: TutorWorkload[];
+	}>({
 		totalClasses: 0,
 		activeClasses: 0,
 		studentsWithoutClass: 0,

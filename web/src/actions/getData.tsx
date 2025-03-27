@@ -137,22 +137,90 @@ export const getClassesForUser = async ({
 	userId: string
 	role: string
 }) => {
-	const url = `${import.meta.env.VITE_HOST}/getClassesForUser/${userId}/${role}`
+	try {
+		const url = `${import.meta.env.VITE_HOST}/getClassesForUser/${userId}/${role}`
 
-	const options = {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authentication: `Bearer ${token}`,
-			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
-		},
+		const options = {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authentication: `Bearer ${token}`,
+				API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+			},
+		}
+
+		console.log('Fetching classes with options:', options)
+		const response = await fetch(url, options)
+		const data = await response.json()
+		console.log('Classes response:', data)
+
+		if (!response.ok) {
+			console.error('Failed to fetch classes:', data)
+			return []
+		}
+
+		// If data is an error object, return empty array
+		if (data && data.error) {
+			console.error('Error in response:', data.error)
+			return []
+		}
+
+		// Handle both response formats - array or {item: array}
+		if (Array.isArray(data)) {
+			return data
+		}
+
+		// If data has item property, return it
+		if (data && data.item) {
+			return data.item
+		}
+
+		// If no valid data format is found, return empty array
+		console.log('No valid data format found')
+		return []
+	} catch (error) {
+		console.error('Error fetching classes:', error)
+		return []
 	}
+}
 
-	const response = await fetch(url, options)
-	const data = await response.json()
+export const getAllClasses = async (token: string) => {
+	try {
+		const url = `${import.meta.env.VITE_HOST}/getAllClasses`
+		const options = {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authentication: `Bearer ${token}`,
+				API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+			},
+		}
 
-	if (response.status !== 200) {
-		return null
+		console.log('Fetching classes with options:', options)
+		const response = await fetch(url, options)
+		const data = await response.json()
+		console.log('Classes response:', data)
+
+		if (!response.ok) {
+			console.error('Failed to fetch classes:', data)
+			return []
+		}
+
+		// If data is an error object, return empty array
+		if (data && data.error) {
+			console.error('Error in response:', data.error)
+			return []
+		}
+
+		// If data is null/undefined, return empty array
+		if (!data) {
+			console.log('No data returned')
+			return []
+		}
+
+		return data
+	} catch (error) {
+		console.error('Error fetching classes:', error)
+		return []
 	}
-	return data
 }

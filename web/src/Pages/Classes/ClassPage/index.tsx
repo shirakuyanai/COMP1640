@@ -2,6 +2,7 @@ import { Button } from '@/Components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs'
 import React from 'react'
 import MessagePage from './Message'
+import ContentPage from './Content'
 import { useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import { Progress } from '@/Components/ui/progress'
@@ -40,7 +41,7 @@ function ClassPage() {
 						<OverviewTab />
 					</TabsContent>
 					<TabsContent value='content'>
-						<div>Content</div>
+						<ContentPage />
 					</TabsContent>
 					<TabsContent value='assignment'>
 						<div>Assignment</div>
