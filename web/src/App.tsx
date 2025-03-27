@@ -7,13 +7,13 @@ import OverViewPage from './Pages/Overview'
 import ClassesPage from './Pages/Classes'
 import NotFound from '@/Components/NotFound'
 import StaffLayout from './Pages/Staff/layout'
-import ReallocatePage from './Pages/Staff/Reallocate'
+import ReallocateStudentPage from './Pages/Staff/Class/ReallocateStudentPage'
 import AddClass from './Pages/Staff/Class/AddClass'
 import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
 import { GlobalStateProvider } from './misc/GlobalStateContext'
 import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
-import { Toaster } from '@/Components/ui/toaster'
+import MeetingPage from './Pages/Staff/Class/MeetingPage'
 
 function App() {
 	return (
@@ -67,7 +67,7 @@ function App() {
 						/>
 						<Route
 							path='/staff/reallocate'
-							element={<ReallocatePage />}
+							element={<ReallocateStudentPage />}
 						/>
 						<Route
 							path='/staff/meeting'
@@ -75,7 +75,6 @@ function App() {
 						/>
 					</Route>
 				</Routes>
-				<Toaster />
 			</Router>
 		</GlobalStateProvider>
 	)
