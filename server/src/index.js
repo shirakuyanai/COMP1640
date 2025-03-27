@@ -44,6 +44,8 @@ import {
 	getClassById,
 	getClassesForUser,
 	getDataForCreatingClass,
+	reallocateClass,
+	getAllClasses,
 } from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
 import {
@@ -146,6 +148,11 @@ connectToDatabase().then(() => {
 				studentId: req.body.studentId,
 				tutorId: req.body.tutorId,
 				className: req.body.className,
+				description: req.body.description,
+				startDate: req.body.startDate,
+				endDate: req.body.endDate,
+				schedule: req.body.schedule,
+				meetingLink: req.body.meetingLink
 			})
 			res.status(response.status).json(response.item)
 		},
@@ -184,7 +191,29 @@ connectToDatabase().then(() => {
 		},
 	)
 
-	//....
+	app.get(
+		'/getAllClasses',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			try {
+				console.log('Getting all classes...')
+				const response = await getAllClasses()
+				console.log('getAllClasses response:', response)
+				
+				if (!response) {
+					console.error('getAllClasses returned null/undefined')
+					return res.status(500).json({ error: 'Internal server error' })
+				}
+				
+				res.status(response.status).json(response.item)
+			} catch (error) {
+				console.error('Error in /getAllClasses endpoint:', error)
+				res.status(500).json({ error: error.message || 'Internal server error' })
+			}
+		},
+	)
 
 	///////////////////////////////////
 
@@ -211,6 +240,17 @@ connectToDatabase().then(() => {
 				role: req.params.role,
 			})
 			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/class/reallocate',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			const response = await reallocateClass(req.body)
+			res.status(response.status || 200).json(response)
 		},
 	)
 

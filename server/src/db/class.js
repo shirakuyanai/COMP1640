@@ -1,5 +1,5 @@
 import { db } from '../config/db_config.js'
-import { eq } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import Class from '../schema/Class.js'
 import Student from '../schema/Student.js'
 import Tutor from '../schema/Tutor.js'
@@ -153,17 +153,8 @@ export const getClassesForUser = async (userId, role) => {
 			return { status: 404, error: 'invalid user' }
 		}
 
-		const user_user = await db
-			.select()
-			.from(User)
-			.where(eq(User.userId, userId))
-
-		if (!user_user || user_user.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
-		}
-
-		let data = await db
+		// Get classes for the user
+		let classes = await db
 			.select()
 			.from(Class)
 			.where(
@@ -172,63 +163,65 @@ export const getClassesForUser = async (userId, role) => {
 					: eq(Class.tutorId, user[0].tutorId),
 			)
 
-		if (!data || data.length === 0) {
-			logError('find classes with user', 'classes not found')
-			return { status: 404, error: 'classes not found' }
+		if (!classes || classes.length === 0) {
+			return { status: 200, item: [] } // Return empty array instead of error
 		}
 
-		let user2 = null
-		switch (role) {
-			case 'student': {
-				user2 = await db
-					.select()
-					.from(Tutor)
-					.where(eq(Tutor.tutorId, data[0].tutorId))
-				break
-			}
-			case 'tutor': {
-				user2 = await db
-					.select()
-					.from(Student)
-					.where(eq(Student.studentId, data[0].studentId))
-				break
-			}
-			default: {
-				return { status: 404, error: 'invalid user' }
-			}
+		// Get all unique student and tutor IDs from the classes
+		const studentIds = [...new Set(classes.map(c => c.studentId))]
+		const tutorIds = [...new Set(classes.map(c => c.tutorId))]
+
+		let students = []
+		let tutors = []
+
+		// Only fetch if we have IDs to fetch
+		if (studentIds.length > 0) {
+			students = await db
+				.select({
+					studentId: Student.studentId,
+					username: User.username,
+				})
+				.from(Student)
+				.innerJoin(User, eq(Student.userId, User.userId))
+				.where(inArray(Student.studentId, studentIds))
 		}
 
-		if (!user2 || user2.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
-		}
-		const user2_user = await db
-			.select()
-			.from(User)
-			.where(eq(User.userId, user2[0].userId))
-
-		if (!user2_user || user2_user.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
+		if (tutorIds.length > 0) {
+			tutors = await db
+				.select({
+					tutorId: Tutor.tutorId,
+					username: User.username,
+				})
+				.from(Tutor)
+				.innerJoin(User, eq(Tutor.userId, User.userId))
+				.where(inArray(Tutor.tutorId, tutorIds))
 		}
 
-		const updatedData = data.map((current_class) => ({
-			...current_class,
-			studentUsername: user_user[0]?.username || 'Unknown Student',
-			tutorUsername: user2_user[0]?.username || 'Unknown Tutor',
+		// Create lookup maps
+		const studentMap = Object.fromEntries(
+			students.map(s => [s.studentId, s.username])
+		)
+		const tutorMap = Object.fromEntries(
+			tutors.map(t => [t.tutorId, t.username])
+		)
+
+		// Map the classes with usernames
+		const classesWithUsernames = classes.map(classItem => ({
+			...classItem,
+			studentUsername: studentMap[classItem.studentId] || 'Unknown Student',
+			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
 		}))
-
-		console.log(updatedData) // ✅ Logs transformed data
 
 		Log('classes found with user')
 
 		return {
 			status: 200,
-			item: updatedData,
+			item: classesWithUsernames,
 		}
 	} catch (err) {
+		console.error('Error in getClassesForUser:', err)
 		logError('find classes with user', err)
-		return { status: 500, error: err }
+		return { status: 500, error: err.message || 'Internal server error' }
 	}
 }
 
