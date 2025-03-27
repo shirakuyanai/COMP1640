@@ -69,6 +69,10 @@ function App() {
 							path='/staff/reallocate'
 							element={<ReallocatePage />}
 						/>
+						<Route
+							path='/staff/meeting'
+							element={<MeetingPage />}
+						/>
 					</Route>
 				</Routes>
 				<Toaster />
