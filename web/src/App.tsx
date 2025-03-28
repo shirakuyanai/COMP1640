@@ -13,6 +13,7 @@ import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
 import { GlobalStateProvider } from './misc/GlobalStateContext'
 import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
+import MeetingPage from './Pages/Staff/Meeting'
 import { Toaster } from '@/Components/ui/toaster'
 
 function App() {

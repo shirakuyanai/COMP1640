@@ -19,6 +19,12 @@ import Role from '../schema/Role.js'
  */
 const generateToken = async (user) => {
 	try {
+		// Debug logging
+		console.log('Environment variables:', {
+			JWT_SECRET_KEY: process.env.JWT_SECRET_KEY ? 'exists' : 'missing',
+			NODE_ENV: process.env.NODE_ENV
+		});
+
 		// Return the role of the selected user
 		const userRole = await db
 			.select()
@@ -41,8 +47,9 @@ const generateToken = async (user) => {
 		}
 
 		// No secret key = bye bye
-		const secretKey = process.env.JWT_KEY
+		const secretKey = process.env.JWT_SECRET_KEY
 		if (!secretKey) {
+			console.error('JWT_SECRET_KEY is missing from environment variables');
 			return {
 				status: 500,
 				item: logError(
@@ -197,7 +204,7 @@ const ValidateInputLogin = async (req, res) => {
 
 const decodeToken = async (token) => {
 	try {
-		if (!process.env.JWT_KEY)
+		if (!process.env.JWT_SECRET_KEY)
 			return {
 				status: 500,
 				item: logError(`decode token`, 'No token encryption key found.'),
@@ -327,7 +334,7 @@ export const authenticateApp = (req, res, next) => {
  */
 const PayloadFromToken = async (token) => {
 	try {
-		if (!process.env.JWT_KEY)
+		if (!process.env.JWT_SECRET_KEY)
 			return {
 				status: 500,
 				item: logError(
@@ -337,7 +344,7 @@ const PayloadFromToken = async (token) => {
 			}
 		const data = await jwt.verify(
 			token,
-			process.env.JWT_KEY,
+			process.env.JWT_SECRET_KEY,
 			(err, decoded) => {
 				if (err) {
 					if (err.message === 'invalid token' || err.message === 'jwt expired')
