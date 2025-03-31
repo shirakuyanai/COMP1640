@@ -5,6 +5,7 @@ import Class from '../schema/Class.js'
 import { Log, logError } from '../lib/logger.js'
 import { and, eq } from 'drizzle-orm'
 import User from '../schema/User.js'
+import { io } from '../lib/socket.js' 
 
 export const getAllStudents = async () => {
 	try {
@@ -246,6 +247,20 @@ export const addNewClass = async ({ studentId, tutorId, className }) => {
 			.returning()
 
 		Log('new class added')
+
+		const totalStudents = await db.select().from(Student)
+		const totalTutors = await db.select().from(Tutor)
+		const allClasses = await db.select().from(Class)
+
+		const studentIdsInClass = new Set(allClasses.map(c => c.studentId))
+		const unallocated = totalStudents.filter(s => !studentIdsInClass.has(s.studentId))
+
+		io.emit('dashboardUpdate', {
+			totalStudents: totalStudents.length,
+			totalTutors: totalTutors.length,
+			unallocatedStudents: unallocated.length,
+		})
+
 		return { status: 200, item: newRow }
 	} catch (err) {
 		logError('add new class', err)

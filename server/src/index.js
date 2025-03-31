@@ -5,21 +5,15 @@ import bodyParser from 'body-parser'
 import express from 'express'
 const app = express()
 
-app.use(express.json())
-
 // support parsing of application/json type post data.
 app.use(bodyParser.json())
-
-//support parsing of application/x-www-form-urlencoded post data.
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(express.json())
 
-// Server port.
-const PORT = process.env.PORT || 5000
-
-// CORS import.
+// CORS import
 import cors from 'cors'
 
-// CORS policies.
+// CORS policies
 app.use(
 	cors({
 		origin: JSON.parse(process.env.ALLOWED_HOSTS ?? '[]'),
@@ -28,16 +22,29 @@ app.use(
 )
 app.enable('trust proxy')
 
-// Database connection import
+const PORT = process.env.PORT || 5002
+
+import http from 'http'
+const server = http.createServer(app)
+
+import { Server } from 'socket.io'
+export const io = new Server(server, {
+	cors: {
+		origin: '*',
+		methods: ['GET', 'POST'],
+	},
+})
+
 import { connectToDatabase } from './config/db_config.js'
 import {
 	alreadyLoggedIn,
 	authenticateApp,
 	staffOnly,
 	authenticateToken,
-	hashPassword,
 	Login,
 } from './lib/auth.js'
+
+import { Log } from './lib/logger.js'
 
 import {
 	addNewClass,
@@ -52,25 +59,16 @@ import {
 	saveMessage,
 } from './db/message.js'
 
-import { Server } from 'socket.io'
-import http from 'http'
-import { Log } from './lib/logger.js'
+// Routes
+import meetingRoutes from './routes/meetings.js'
+app.use('/api/meetings', meetingRoutes)
 
-const server = http.createServer(app)
-
-const io = new Server(server, {
-	cors: {
-		origin: '*',
-		methods: ['GET', 'POST'],
-	},
-})
-
+// WebSocket users
 const usersSockets = {}
 
-// Connect to the database first, then do everything else later
+// Connect to DB and start everything
 connectToDatabase().then(() => {
-	
-	// Websocket for direct messaging
+	// WebSocket: user messaging
 	io.use((socket, next) => {
 		const username = socket.handshake.auth.username
 		Log(`user ${username} connected`)
@@ -107,9 +105,12 @@ connectToDatabase().then(() => {
 			socket.join(room)
 		})
 
+		socket.on('offer', (data) => socket.broadcast.emit('offer', data))
+		socket.on('answer', (data) => socket.broadcast.emit('answer', data))
+		socket.on('ice-candidate', (data) => socket.broadcast.emit('ice-candidate', data))
+
 		socket.on('disconnect', () => {
 			Log('user disconnected')
-
 			delete usersSockets[socket.username]
 		})
 	})
@@ -117,8 +118,6 @@ connectToDatabase().then(() => {
 	app.get('/', (req, res) => {
 		res.json('Congratulations, your server is up and running!')
 	})
-
-	// Authentication
 
 	app.post('/login', authenticateApp, alreadyLoggedIn, async (req, res) => {
 		const response = await Login(req, res)
@@ -183,12 +182,6 @@ connectToDatabase().then(() => {
 			res.status(response.status).json(response.item)
 		},
 	)
-
-	//....
-
-	///////////////////////////////////
-
-	// User functions
 
 	app.get(
 		'/getCurrentUser',
