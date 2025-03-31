@@ -209,6 +209,3 @@ connectToDatabase().then(() => {
 
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })
-
-import { initSocket } from './lib/socket.js'
-const io = initSocket(server)
