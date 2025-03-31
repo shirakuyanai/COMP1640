@@ -5,7 +5,7 @@ import Class from '../schema/Class.js'
 import { Log, logError } from '../lib/logger.js'
 import { and, eq } from 'drizzle-orm'
 import User from '../schema/User.js'
-import { io } from '../lib/socket.js' 
+import { getIO } from '../lib/socket.js' 
 
 export const getAllStudents = async () => {
 	try {
@@ -145,7 +145,7 @@ export const getClassesForUser = async (userId, role) => {
 			tutorUsername: user2_user[0]?.username || 'Unknown Tutor',
 		}))
 
-		console.log(updatedData) // ✅ Logs transformed data
+		console.log(updatedData) 
 
 		Log('classes found with user')
 
@@ -255,6 +255,7 @@ export const addNewClass = async ({ studentId, tutorId, className }) => {
 		const studentIdsInClass = new Set(allClasses.map(c => c.studentId))
 		const unallocated = totalStudents.filter(s => !studentIdsInClass.has(s.studentId))
 
+		const io = getIO()
 		io.emit('dashboardUpdate', {
 			totalStudents: totalStudents.length,
 			totalTutors: totalTutors.length,
@@ -267,3 +268,4 @@ export const addNewClass = async ({ studentId, tutorId, className }) => {
 		return { status: 500, item: err }
 	}
 }
+

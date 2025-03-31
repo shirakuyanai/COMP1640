@@ -196,5 +196,6 @@ connectToDatabase().then(() => {
 		},
 	)
 
+  const PORT = process.env.PORT || 5002
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })
