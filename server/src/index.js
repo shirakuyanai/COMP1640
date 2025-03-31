@@ -22,18 +22,11 @@ app.use(
 )
 app.enable('trust proxy')
 
-const PORT = process.env.PORT || 5002
-
 import http from 'http'
 const server = http.createServer(app)
 
-import { Server } from 'socket.io'
-export const io = new Server(server, {
-	cors: {
-		origin: '*',
-		methods: ['GET', 'POST'],
-	},
-})
+import { initSocket } from './lib/socket.js'
+const io = initSocket(server)
 
 import { connectToDatabase } from './config/db_config.js'
 import {
@@ -59,16 +52,12 @@ import {
 	saveMessage,
 } from './db/message.js'
 
-// Routes
 import meetingRoutes from './routes/meetings.js'
 app.use('/api/meetings', meetingRoutes)
 
-// WebSocket users
 const usersSockets = {}
 
-// Connect to DB and start everything
 connectToDatabase().then(() => {
-	// WebSocket: user messaging
 	io.use((socket, next) => {
 		const username = socket.handshake.auth.username
 		Log(`user ${username} connected`)
