@@ -19,7 +19,7 @@ function MeetingPage() {
 	useEffect(() => {
 		const fetchMeetings = async () => {
 			try {
-				const res = await fetch('http://localhost:5002/api/meetings')
+				const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/meetings`)
 				const data = await res.json()
 				setMeetings(data)
 			} catch (err) {
