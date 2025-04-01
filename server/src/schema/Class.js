@@ -11,11 +11,9 @@ const Class = pgTable('class', {
 	tutorId: uuid('tutorId')
 		.references(() => Tutor.tutorId)
 		.notNull(),
-	description: text('description'),
 	startDate: timestamp('startDate'),
 	endDate: timestamp('endDate'),
-	schedule: json('schedule'),
-	meetingLink: text('meetingLink')
+	schedule: json('schedule')
 })
 
 export default Class

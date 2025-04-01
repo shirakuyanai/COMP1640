@@ -39,11 +39,9 @@ export async function getAllClasses() {
 				className: Class.className,
 				studentId: Class.studentId,
 				tutorId: Class.tutorId,
-				description: Class.description,
 				startDate: Class.startDate,
 				endDate: Class.endDate,
 				schedule: Class.schedule,
-				meetingLink: Class.meetingLink,
 			})
 			.from(Class)
 			.execute()
@@ -301,86 +299,45 @@ export const getDataForCreatingClass = async () => {
 	}
 }
 
-export const addNewClass = async ({ studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink }) => {
+export const addNewClass = async ({ studentId, tutorId, className, startDate, endDate, schedule }) => {
 	try {
-		console.log('Received data:', { studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink })
-		
+		console.log('Adding new class:', { studentId, tutorId, className, startDate, endDate, schedule })
+
 		// Validate required fields
-		if (!studentId || !tutorId || !className) {
-			console.log('Missing required fields:', { studentId, tutorId, className })
+		if (!studentId || !tutorId || !className || !startDate || !endDate || !schedule) {
 			return { status: 400, error: 'Missing required fields' }
 		}
 
-		// Validate student exists
-		const student = await db.select().from(Student).where(eq(Student.studentId, studentId))
-		console.log('Found student:', student)
-		if (!student || student.length === 0) {
-			return { status: 400, error: 'Invalid student ID' }
+		// Convert date strings to Date objects
+		const formattedStartDate = new Date(startDate)
+		const formattedEndDate = new Date(endDate)
+
+		// Validate dates
+		if (isNaN(formattedStartDate.getTime()) || isNaN(formattedEndDate.getTime())) {
+			return { status: 400, error: 'Invalid date format' }
 		}
 
-		// Validate tutor exists
-		const tutor = await db.select().from(Tutor).where(eq(Tutor.tutorId, tutorId))
-		console.log('Found tutor:', tutor)
-		if (!tutor || tutor.length === 0) {
-			return { status: 400, error: 'Invalid tutor ID' }
+		if (formattedStartDate > formattedEndDate) {
+			return { status: 400, error: 'Start date must be before end date' }
 		}
 
-		// Validate dates if provided
-		if (startDate && endDate) {
-			const start = new Date(startDate)
-			const end = new Date(endDate)
-			console.log('Dates:', { start, end })
-			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-				return { status: 400, error: 'Invalid date format' }
-			}
-			if (start > end) {
-				return { status: 400, error: 'Start date must be before end date' }
-			}
-		}
+		// Create new class
+		const newClass = await db
+			.insert(Class)
+			.values({
+				studentId,
+				tutorId,
+				className,
+				startDate: formattedStartDate,
+				endDate: formattedEndDate,
+				schedule
+			})
+			.returning()
 
-		// Validate schedule if provided
-		if (schedule) {
-			console.log('Schedule:', schedule)
-			if (!Array.isArray(schedule.days) || !Array.isArray(schedule.times)) {
-				return { status: 400, error: 'Invalid schedule format' }
-			}
-		}
-
-		const values = { 
-			studentId, 
-			tutorId, 
-			className,
-			description: description || null,
-			startDate: startDate ? new Date(startDate) : null,
-			endDate: endDate ? new Date(endDate) : null,
-			schedule: schedule || null,
-			meetingLink: meetingLink || null
-		}
-		console.log('Inserting values:', values)
-
-		try {
-			const newRow = await db
-				.insert(Class)
-				.values(values)
-				.onConflictDoNothing()
-				.returning()
-
-			console.log('Insert result:', newRow)
-
-			if (!newRow || newRow.length === 0) {
-				return { status: 500, error: 'Failed to create class' }
-			}
-
-			Log('new class added')
-			return { status: 200, item: newRow[0] }
-		} catch (dbError) {
-			console.error('Database error:', dbError)
-			return { status: 500, error: `Database error: ${dbError.message}` }
-		}
-	} catch (err) {
-		console.error('Error in addNewClass:', err)
-		logError('add new class', err)
-		return { status: 500, error: `Server error: ${err.message}` }
+		return { status: 200, item: newClass[0] }
+	} catch (error) {
+		console.error('Error adding new class:', error)
+		return { status: 500, error: error.message }
 	}
 }
 

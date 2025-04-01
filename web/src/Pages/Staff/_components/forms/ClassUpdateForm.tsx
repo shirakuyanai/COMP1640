@@ -54,11 +54,9 @@ function ClassUpdateForm({
 			className: '',
 			studentId: '',
 			tutorId: '',
-			description: '',
 			startDate: '',
 			endDate: '',
-			schedule: { days: [], times: [] },
-			meetingLink: ''
+			schedule: { days: [], times: [] }
 		},
 	})
 
@@ -123,6 +121,16 @@ function ClassUpdateForm({
 		getData()
 	}, [])
 
+	const dayColors = {
+		Monday: 'bg-blue-100 hover:bg-blue-200 text-blue-800',
+		Tuesday: 'bg-green-100 hover:bg-green-200 text-green-800',
+		Wednesday: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800',
+		Thursday: 'bg-purple-100 hover:bg-purple-200 text-purple-800',
+		Friday: 'bg-red-100 hover:bg-red-200 text-red-800',
+		Saturday: 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800',
+		Sunday: 'bg-pink-100 hover:bg-pink-200 text-pink-800'
+	}
+
 	return (
 		<Form {...form}>
 			<form
@@ -143,24 +151,6 @@ function ClassUpdateForm({
 									<Input
 										{...field}
 										className='h-12'
-										disabled={isLocked}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name='description'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Description</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										className='h-12'
-										placeholder='Enter class description'
 										disabled={isLocked}
 									/>
 								</FormControl>
@@ -208,17 +198,11 @@ function ClassUpdateForm({
 						<FormLabel>Schedule</FormLabel>
 						<div className="space-y-2">
 							<p className="text-sm text-gray-500">Select Days</p>
-							<div className="flex flex-wrap gap-2">
-								{DAYS_OF_WEEK.map((day) => (
-									<Button
+							<div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+								{Object.entries(dayColors).map(([day, color]) => (
+									<button
 										key={day}
 										type="button"
-										disabled={isLocked}
-										className={`px-3 py-1 rounded ${
-											selectedDays.includes(day)
-												? 'bg-blue-500 text-white'
-												: 'bg-gray-200'
-										}`}
 										onClick={() => {
 											setSelectedDays(prev =>
 												prev.includes(day)
@@ -226,9 +210,15 @@ function ClassUpdateForm({
 													: [...prev, day]
 											)
 										}}
+										className={`p-2 rounded-lg text-sm font-medium transition-colors ${
+											selectedDays.includes(day)
+												? color
+												: 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+										} ${isLocked ? 'cursor-not-allowed opacity-50' : ''}`}
+										disabled={isLocked}
 									>
 										{day}
-									</Button>
+									</button>
 								))}
 							</div>
 						</div>
@@ -259,24 +249,6 @@ function ClassUpdateForm({
 							/>
 						</div>
 					</div>
-					<FormField
-						control={form.control}
-						name='meetingLink'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Meeting Link</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										className='h-12'
-										placeholder='https://meet.google.com/...'
-										disabled={isLocked}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
 					<FormField
 						control={form.control}
 						name='studentId'

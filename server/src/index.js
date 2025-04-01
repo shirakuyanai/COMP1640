@@ -57,6 +57,7 @@ import {
 import { Server } from 'socket.io'
 import http from 'http'
 import { Log } from './lib/logger.js'
+import classRoutes from './routes/class.js'
 
 const server = http.createServer(app)
 
@@ -254,5 +255,9 @@ connectToDatabase().then(() => {
 		},
 	)
 
-	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
+	// Register routes
+	app.use('/class', classRoutes)
+
+	// Start server
+	server.listen(PORT, () => console.log(`Server listening on port ${PORT}`))
 })
