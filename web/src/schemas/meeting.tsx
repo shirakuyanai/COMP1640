@@ -1,0 +1,11 @@
+import { z } from 'zod'
+
+export const newMeetingSchema = z.object({
+	classId: z.string().min(1, 'Required'),
+	meetingDate: z.string().min(1, 'Required'),
+	meetingType: z.string().min(1, 'Required'),
+	meetingNote: z.string(),
+	meetingLink: z.string().optional(),
+	location: z.string().optional(),
+	studentAttended: z.number().default(0),
+})

@@ -1,7 +1,6 @@
 import React from 'react'
 import { FaHouse, FaChartLine } from 'react-icons/fa6'
 import { FaBookOpenReader } from 'react-icons/fa6'
-import { FaCalendar } from 'react-icons/fa6'
 import MenuButton from '@/Components/MenuButton'
 import { FaGear } from 'react-icons/fa6'
 import { FaRightFromBracket } from 'react-icons/fa6'
@@ -38,10 +37,6 @@ function StaffSidebar() {
 					<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
 					<p className='text-sm'>Reallocate student(s)</p>
 				</MenuButton>
-				<MenuButton href='/staff/meeting'>
-					<FaCalendar className='text-gray-600 h-5 w-5' />
-					<p className='text-sm'>Meetings</p>
-				</MenuButton>
 			</div>
 			<div className='fixed bottom-0 border border-l-0 border-r-0 border-b-0 border-gray-300 w-64 p-5'>
 				<div className='flex flex-col gap-4'>
@@ -49,7 +44,9 @@ function StaffSidebar() {
 						<div className='flex flex-row gap-4 align-middle items-center'>
 							<div className='border border-gray-200 rounded-full w-10 h-10 bg-gray-200'></div>
 							<div className='flex flex-col'>
-								<h4 className='text-sm font-semibold'>{currentUser?.username}</h4>
+								<h4 className='text-sm font-semibold'>
+									{currentUser?.username}
+								</h4>
 								<h4 className='text-sm'>{currentUser?.role.toUpperCase()}</h4>
 							</div>
 						</div>

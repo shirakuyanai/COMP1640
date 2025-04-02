@@ -1,4 +1,6 @@
+import { Button } from '@/Components/ui/button'
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 interface Meeting {
 	meetingId: string
@@ -36,7 +38,12 @@ function MeetingPage() {
 
 	return (
 		<div className='p-6 bg-gray-100 min-h-screen'>
-			<h1 className='text-3xl font-bold mb-6'>Meetings</h1>
+			<div className='flex flex-row justify-between'>
+				<h1 className='text-3xl font-bold mb-6'>Meetings</h1>
+				<Button>
+					<Link to={'/dashboard/meetings/newMeeting'}>New Meeting</Link>
+				</Button>
+			</div>
 
 			{/* Meetings Table */}
 			<div className='bg-white p-6 rounded-lg shadow-md'>
@@ -54,7 +61,10 @@ function MeetingPage() {
 					</thead>
 					<tbody>
 						{meetings.map((meeting) => (
-							<tr key={meeting.meetingId} className='border-t'>
+							<tr
+								key={meeting.meetingId}
+								className='border-t'
+							>
 								<td className='p-3'>{meeting.class}</td>
 								<td className='p-3'>{meeting.tutorName}</td>
 								<td className='p-3'>{meeting.meetingDate}</td>

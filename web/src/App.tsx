@@ -14,6 +14,8 @@ import { GlobalStateProvider } from './misc/GlobalStateContext'
 import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
 import { Toaster } from '@/Components/ui/toaster'
+import MeetingPage from './Pages/Staff/Class/MeetingPage'
+import NewMeeting from './Pages/Staff/Class/MeetingPage/NewMeeting'
 
 function App() {
 	return (
@@ -55,6 +57,14 @@ function App() {
 							path='/dashboard/classes/:id/message'
 							element={<MessagePage />}
 						/>
+						<Route
+							path='/dashboard/meetings'
+							element={<MeetingPage />}
+						/>
+						<Route
+							path='/dashboard/meetings/newMeeting'
+							element={<NewMeeting />}
+						/>
 					</Route>
 					<Route element={<StaffLayout />}>
 						<Route
@@ -68,10 +78,6 @@ function App() {
 						<Route
 							path='/staff/reallocate'
 							element={<ReallocatePage />}
-						/>
-						<Route
-							path='/staff/meeting'
-							element={<MeetingPage />}
 						/>
 					</Route>
 				</Routes>

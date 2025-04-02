@@ -10,6 +10,7 @@ import { FaCalendar, FaFileLines } from 'react-icons/fa6'
 import { CiChat1 } from 'react-icons/ci'
 import { IoBookOutline } from 'react-icons/io5'
 import { FiDownload } from 'react-icons/fi'
+import MeetingPage from '@/Pages/Staff/Class/MeetingPage'
 
 function ClassPage() {
 	const [searchParams] = useSearchParams()
@@ -36,6 +37,7 @@ function ClassPage() {
 						<TabsTrigger value='content'>Content</TabsTrigger>
 						<TabsTrigger value='assignment'>Assignment</TabsTrigger>
 						<TabsTrigger value='message'>Message</TabsTrigger>
+						<TabsTrigger value='meetings'>Meetings</TabsTrigger>
 					</TabsList>
 					<TabsContent value='overview'>
 						<OverviewTab />
@@ -49,8 +51,19 @@ function ClassPage() {
 					<TabsContent value='message'>
 						<MessagePage />
 					</TabsContent>
+					<TabsContent value='meetings'>
+						<MeetingsTab />
+					</TabsContent>
 				</Tabs>
 			</div>
+		</div>
+	)
+}
+
+const MeetingsTab = () => {
+	return (
+		<div>
+			<MeetingPage />
 		</div>
 	)
 }
