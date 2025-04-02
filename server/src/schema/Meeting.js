@@ -25,5 +25,5 @@ export const Meeting = pgTable('meeting', {
 	studentAttended: integer('studentAttended').default(0).notNull(),
 	// 0: not yet
 	// 1: attended
-	// 2: not attended
+	// 2: absent
 })

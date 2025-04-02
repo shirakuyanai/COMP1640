@@ -47,6 +47,7 @@ export const getAllMeetingsOfAClass = async (classId) => {
 		}
 
 		const processed_meetings = meetings.map((meeting) => ({
+			meetingId: meeting.meetingId,
 			meetingDate: new Date(meeting.meetingDate).toLocaleString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -58,11 +59,9 @@ export const getAllMeetingsOfAClass = async (classId) => {
 			meetingType: meeting.meetingType,
 			meetingLink: meeting.meetingLink,
 			location: meeting.location,
-			meetingNote: meeting.meetingNotes,
+			meetingNotes: meeting.meetingNotes,
 			studentAttended: meeting.studentAttended,
 		}))
-
-		console.log(processed_meetings)
 
 		return { status: 200, item: processed_meetings }
 	} catch (err) {
@@ -117,6 +116,37 @@ export const newMeeting = async ({
 		return { status: 200, item: newMeeting }
 	} catch (err) {
 		logError('create a new meeting', err)
+		return {
+			status: 500,
+			item: err,
+		}
+	}
+}
+
+export const changeMeetingAttendance = async ({ meetings }) => {
+	try {
+		for (let i = 0; i < meetings.length; i++) {
+			const meeting = await db
+				.update(Meeting)
+				.set({ studentAttended: meetings[i].status })
+				.where(eq(Meeting.meetingId, meetings[i].meetingId))
+				.returning()
+
+			if (meeting.length === 0) {
+				logError(
+					'change meeting attendance',
+					'Failed to change meeting attendance',
+				)
+				return {
+					status: 500,
+					item: 'Failed to change meeting attendance',
+				}
+			}
+		}
+
+		return { status: 200, item: 'Attendance status updated successfully' }
+	} catch (err) {
+		logError('change meeting attendance', err)
 		return {
 			status: 500,
 			item: err,

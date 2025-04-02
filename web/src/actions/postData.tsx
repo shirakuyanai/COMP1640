@@ -1,6 +1,6 @@
 import { addClassSchema } from '@/schemas/class'
 import { loginInfoSchema } from '@/schemas/login'
-import { newMeetingSchema } from '@/schemas/meeting'
+import { meetingAttendanceSchema, newMeetingSchema } from '@/schemas/meeting'
 import { z } from 'zod'
 
 export async function AddNewClass(
@@ -162,6 +162,37 @@ export async function AddNewMeeting(
 			},
 			body: JSON.stringify(formData),
 		})
+
+		const data = await response.json()
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to create class')
+		}
+
+		return data
+	} catch (error) {
+		console.error('Fetch error:', error)
+		throw error
+	}
+}
+
+export async function updateMeetingAttendance(
+	formData: z.infer<typeof meetingAttendanceSchema>,
+	authToken: string,
+) {
+	try {
+		const response = await fetch(
+			`${import.meta.env.VITE_HOST}/changeMeetingAttendance`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authentication: `Bearer ${authToken}`,
+					API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+				},
+				body: JSON.stringify(formData),
+			},
+		)
 
 		const data = await response.json()
 

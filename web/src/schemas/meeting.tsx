@@ -25,3 +25,12 @@ export const newMeetingSchema = z
 			})
 		}
 	})
+
+export const meetingAttendanceSchema = z.object({
+	meetings: z.array(
+		z.object({
+			meetingId: z.string(),
+			status: z.number(),
+		}),
+	),
+})

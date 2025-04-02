@@ -57,7 +57,11 @@ import {
 import { Server } from 'socket.io'
 import http from 'http'
 import { Log } from './lib/logger.js'
-import { getAllMeetingsOfAClass, newMeeting } from './db/meeting.js'
+import {
+	changeMeetingAttendance,
+	getAllMeetingsOfAClass,
+	newMeeting,
+} from './db/meeting.js'
 
 const server = http.createServer(app)
 
@@ -171,6 +175,18 @@ connectToDatabase().then(() => {
 				meetingLink: req.body.meetingLink,
 				location: req.body.location,
 				studentAttended: req.body.studentAttended,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/changeMeetingAttendance',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await changeMeetingAttendance({
+				meetings: req.body.meetings,
 			})
 			res.status(response.status).json(response.item)
 		},
