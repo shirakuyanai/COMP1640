@@ -1,6 +1,6 @@
 import { Button } from '@/Components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs'
-import React from 'react'
+import React, { useEffect } from 'react'
 import MessagePage from './Message'
 import ContentPage from './Content'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -11,18 +11,38 @@ import { CiChat1 } from 'react-icons/ci'
 import { IoBookOutline } from 'react-icons/io5'
 import { FiDownload } from 'react-icons/fi'
 import MeetingPage from '@/Pages/Staff/Class/MeetingPage'
+import { getClassById } from '@/actions/getData'
+import { useGlobalState } from '@/misc/GlobalStateContext'
 
 function ClassPage() {
 	const [searchParams] = useSearchParams()
+	const { authToken, currentUser } = useGlobalState()
 	const param = searchParams.get('tab') ?? 'overview'
 	const { id } = useParams()
+	const [found_class, setFoundClass] = React.useState<any>(null)
+	const getData = async () => {
+		const fetched_class = await getClassById({
+			token: authToken,
+			classId: id ?? '',
+			userId: currentUser.id,
+			role: currentUser.role,
+		})
 
-	if (id)
+		setFoundClass(fetched_class)
+	}
+
+	useEffect(() => {
+		if (currentUser) getData()
+	}, [currentUser])
+
+	if (id && found_class)
 		return (
 			<div>
 				<div className='bg-gradient-to-r from-blue-600 to-purple-500 px-30 py-10 flex flex-col gap-5'>
 					<div className='flex flex-row justify-between'>
-						<h1 className='text-3xl text-white font-bold'>sdawfasf</h1>
+						<h1 className='text-3xl text-white font-bold'>
+							{found_class.className ?? 'N/A'}
+						</h1>
 						<Button variant='outline'>Join Meet</Button>
 					</div>
 					<div className='flex flex-row gap-2 items-center'>
@@ -52,7 +72,7 @@ function ClassPage() {
 							<div>Assignment</div>
 						</TabsContent>
 						<TabsContent value='message'>
-							<MessagePage />
+							<MessagePage found_class={found_class} />
 						</TabsContent>
 						<TabsContent value='meetings'>
 							<MeetingsTab />

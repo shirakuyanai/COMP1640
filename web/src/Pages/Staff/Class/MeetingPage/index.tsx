@@ -86,7 +86,7 @@ function MeetingPage() {
 	return (
 		<div className='p-6 bg-gray-100 min-h-screen'>
 			<div className='flex flex-row justify-between'>
-				<h1 className='text-3xl font-bold mb-6'>Meetings</h1>
+				<h1 className='text-3xl font-bold mb-6'>Meeting records</h1>
 				<Button>
 					<Link to={`/dashboard/classes/${id}/meetings/newMeeting`}>
 						New Meeting
@@ -97,8 +97,6 @@ function MeetingPage() {
 			{/* Meetings Table */}
 
 			<div className='bg-white p-6 rounded-lg shadow-md'>
-				<h2 className='text-xl font-semibold mb-4'>Upcoming & Past Meetings</h2>
-
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)}>
 						<table className='w-full border-collapse'>
