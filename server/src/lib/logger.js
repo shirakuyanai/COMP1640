@@ -4,7 +4,7 @@ import winston from 'winston'
 /**
  * Write an error to the server's log file
  *
- * @param {string} message - The action that caused the error
+ * @param {string} message - The action that caused the erro
  * @param {any} error - The error's detail
  * @returns {string} - A log with date and the error message
  */
