@@ -52,13 +52,13 @@ import {
 	saveMessage,
 } from './db/message.js'
 
-import meetingRoutes from './routes/meetings.js'
-app.use('/api/meetings', meetingRoutes)
-
 const usersSockets = {}
 
 connectToDatabase().then(() => {
 	io.use((socket, next) => {
+		const username = socket.handshake.auth.username
+		Log(`user ${username} connected`)
+		delete usersSockets[username]
 		usersSockets[username] = socket.id
 		socket.username = username
 		next()
