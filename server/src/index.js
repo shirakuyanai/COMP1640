@@ -242,9 +242,7 @@ connectToDatabase().then(() => {
 		staffOnly,
 		async (req, res) => {
 			try {
-				console.log('Getting all classes...')
 				const response = await getAllClasses()
-				console.log('getAllClasses response:', response)
 
 				if (!response) {
 					console.error('getAllClasses returned null/undefined')
