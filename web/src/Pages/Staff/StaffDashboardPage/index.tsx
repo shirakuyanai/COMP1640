@@ -9,7 +9,7 @@ function StaffDashboardPage() {
 	})
 
 	useEffect(() => {
-		const socket = io('http://localhost:5002') 
+		const socket = io('import.meta.env.VITE_HOST') 
 
 		socket.on('dashboardUpdate', (data: typeof stats) => {
 			console.log('📡 Real-time dashboard update:', data)
