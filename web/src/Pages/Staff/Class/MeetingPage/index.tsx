@@ -1,5 +1,7 @@
+import { getMeetingsOfAClass } from '@/actions/getData'
 import { Button } from '@/Components/ui/button'
-import React, { useState } from 'react'
+import { useGlobalState } from '@/misc/GlobalStateContext'
+import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 interface Meeting {
@@ -34,8 +36,21 @@ const sampleMeetings: Meeting[] = [
 ]
 
 function MeetingPage() {
-	const [meetings, setMeetings] = useState(sampleMeetings)
+	const [meetings, setMeetings] = useState([])
 	const { id } = useParams()
+	const { authToken } = useGlobalState()
+	const getMeetings = async () => {
+		const response = await getMeetingsOfAClass({
+			classId: id ?? '',
+			token: authToken,
+		})
+
+		setMeetings(response)
+	}
+
+	useEffect(() => {
+		getMeetings()
+	}, [])
 
 	return (
 		<div className='p-6 bg-gray-100 min-h-screen'>
@@ -51,32 +66,30 @@ function MeetingPage() {
 			{/* Meetings Table */}
 			<div className='bg-white p-6 rounded-lg shadow-md'>
 				<h2 className='text-xl font-semibold mb-4'>Upcoming & Past Meetings</h2>
+
 				<table className='w-full border-collapse'>
 					<thead>
 						<tr className='bg-gray-200'>
-							<th className='p-3 text-left'>Class</th>
-							<th className='p-3 text-left'>Tutor</th>
 							<th className='p-3 text-left'>Date & Time</th>
 							<th className='p-3 text-left'>Type</th>
 							<th className='p-3 text-left'>Notes</th>
 							<th className='p-3 text-left'>Meeting Link</th>
+							<th className='p-3 text-left'>Location</th>
 						</tr>
 					</thead>
 					<tbody>
-						{meetings.map((meeting) => (
+						{meetings.map((meeting, i) => (
 							<tr
-								key={meeting.meetingId}
+								key={i}
 								className='border-t'
 							>
-								<td className='p-3'>{meeting.class}</td>
-								<td className='p-3'>{meeting.tutorName}</td>
 								<td className='p-3'>{meeting.meetingDate}</td>
 								<td className='p-3 capitalize'>{meeting.meetingType}</td>
 								<td className='p-3'>{meeting.meetingNotes || 'N/A'}</td>
 								<td className='p-3'>
 									{meeting.meetingType === 'online' ? (
 										<a
-											href='https://meet.google.com/hwj-mmya-xon'
+											href={meeting.meetingLink}
 											target='_blank'
 											rel='noopener noreferrer'
 											className='text-blue-600 underline'
@@ -87,10 +100,16 @@ function MeetingPage() {
 										'N/A'
 									)}
 								</td>
+								<td className='p-3'>{meeting.location || 'N/A'}</td>
 							</tr>
 						))}
 					</tbody>
 				</table>
+				{meetings.length === 0 && (
+					<div className='bg-white p-6 rounded-lg shadow-md flex justify-center'>
+						<p className='text-gray-500'>No meetings found.</p>
+					</div>
+				)}
 			</div>
 		</div>
 	)

@@ -57,7 +57,7 @@ import {
 import { Server } from 'socket.io'
 import http from 'http'
 import { Log } from './lib/logger.js'
-import { newMeeting } from './db/meeting.js'
+import { getAllMeetingsOfAClass, newMeeting } from './db/meeting.js'
 
 const server = http.createServer(app)
 
@@ -172,6 +172,16 @@ connectToDatabase().then(() => {
 				location: req.body.location,
 				studentAttended: req.body.studentAttended,
 			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.get(
+		'/getMeetingsOfAClass/:classId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getAllMeetingsOfAClass(req.params.classId)
 			res.status(response.status).json(response.item)
 		},
 	)
