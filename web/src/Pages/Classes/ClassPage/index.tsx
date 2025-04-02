@@ -1,6 +1,6 @@
 import { Button } from '@/Components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import MessagePage from './Message'
 import ContentPage from './Content'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { FiDownload } from 'react-icons/fi'
 import MeetingPage from '@/Pages/Staff/Class/MeetingPage'
 import { getClassById } from '@/actions/getData'
 import { useGlobalState } from '@/misc/GlobalStateContext'
+import { Dialog, DialogContent, DialogTrigger } from '@/Components/ui/dialog'
 
 function ClassPage() {
 	const [searchParams] = useSearchParams()
@@ -20,6 +21,8 @@ function ClassPage() {
 	const param = searchParams.get('tab') ?? 'overview'
 	const { id } = useParams()
 	const [found_class, setFoundClass] = React.useState<any>(null)
+	const [isMessageOpen, setIsMessageOpen] = useState(false)
+
 	const getData = async () => {
 		const fetched_class = await getClassById({
 			token: authToken,
@@ -43,7 +46,20 @@ function ClassPage() {
 						<h1 className='text-3xl text-white font-bold'>
 							{found_class.className ?? 'N/A'}
 						</h1>
-						<Button variant='outline'>Join Meet</Button>
+						<div className="flex gap-2">
+							<Dialog>
+								<DialogTrigger asChild>
+									<Button variant='outline' className="flex gap-2 items-center">
+										<CiChat1 className="w-4 h-4" />
+										Messages
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="w-[800px] h-[600px]">
+									<MessagePage found_class={found_class} />
+								</DialogContent>
+							</Dialog>
+							<Button variant='outline'>Join Meet</Button>
+						</div>
 					</div>
 					<div className='flex flex-row gap-2 items-center'>
 						<FaFileLines className='text-gray-200' />
@@ -59,7 +75,6 @@ function ClassPage() {
 							<TabsTrigger value='overview'>Overview</TabsTrigger>
 							<TabsTrigger value='content'>Content</TabsTrigger>
 							<TabsTrigger value='assignment'>Assignment</TabsTrigger>
-							<TabsTrigger value='message'>Message</TabsTrigger>
 							<TabsTrigger value='meetings'>Meetings</TabsTrigger>
 						</TabsList>
 						<TabsContent value='overview'>
@@ -70,9 +85,6 @@ function ClassPage() {
 						</TabsContent>
 						<TabsContent value='assignment'>
 							<div>Assignment</div>
-						</TabsContent>
-						<TabsContent value='message'>
-							<MessagePage found_class={found_class} />
 						</TabsContent>
 						<TabsContent value='meetings'>
 							<MeetingsTab />
