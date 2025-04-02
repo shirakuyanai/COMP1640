@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs'
 import React from 'react'
 import MessagePage from './Message'
 import ContentPage from './Content'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import { Progress } from '@/Components/ui/progress'
 import { FaCalendar, FaFileLines } from 'react-icons/fa6'
@@ -15,49 +15,52 @@ import MeetingPage from '@/Pages/Staff/Class/MeetingPage'
 function ClassPage() {
 	const [searchParams] = useSearchParams()
 	const param = searchParams.get('tab') ?? 'overview'
-	return (
-		<div>
-			<div className='bg-gradient-to-r from-blue-600 to-purple-500 px-30 py-10 flex flex-col gap-5'>
-				<div className='flex flex-row justify-between'>
-					<h1 className='text-3xl text-white font-bold'>sdawfasf</h1>
-					<Button variant='outline'>Join Meet</Button>
-				</div>
-				<div className='flex flex-row gap-2 items-center'>
-					<FaFileLines className='text-gray-200' />
-					<div className='flex flex-col'>
-						<h4 className='text-sm text-gray-200 font-light'>Assignments</h4>
-						<h4 className='text-sm text-gray-200 font-semibold'>12 total</h4>
+	const { id } = useParams()
+
+	if (id)
+		return (
+			<div>
+				<div className='bg-gradient-to-r from-blue-600 to-purple-500 px-30 py-10 flex flex-col gap-5'>
+					<div className='flex flex-row justify-between'>
+						<h1 className='text-3xl text-white font-bold'>sdawfasf</h1>
+						<Button variant='outline'>Join Meet</Button>
+					</div>
+					<div className='flex flex-row gap-2 items-center'>
+						<FaFileLines className='text-gray-200' />
+						<div className='flex flex-col'>
+							<h4 className='text-sm text-gray-200 font-light'>Assignments</h4>
+							<h4 className='text-sm text-gray-200 font-semibold'>12 total</h4>
+						</div>
 					</div>
 				</div>
+				<div className='px-25 py-10'>
+					<Tabs defaultValue={param}>
+						<TabsList className='bg-gray-100'>
+							<TabsTrigger value='overview'>Overview</TabsTrigger>
+							<TabsTrigger value='content'>Content</TabsTrigger>
+							<TabsTrigger value='assignment'>Assignment</TabsTrigger>
+							<TabsTrigger value='message'>Message</TabsTrigger>
+							<TabsTrigger value='meetings'>Meetings</TabsTrigger>
+						</TabsList>
+						<TabsContent value='overview'>
+							<OverviewTab />
+						</TabsContent>
+						<TabsContent value='content'>
+							<ContentPage />
+						</TabsContent>
+						<TabsContent value='assignment'>
+							<div>Assignment</div>
+						</TabsContent>
+						<TabsContent value='message'>
+							<MessagePage />
+						</TabsContent>
+						<TabsContent value='meetings'>
+							<MeetingsTab />
+						</TabsContent>
+					</Tabs>
+				</div>
 			</div>
-			<div className='px-25 py-10'>
-				<Tabs defaultValue={param}>
-					<TabsList className='bg-gray-100'>
-						<TabsTrigger value='overview'>Overview</TabsTrigger>
-						<TabsTrigger value='content'>Content</TabsTrigger>
-						<TabsTrigger value='assignment'>Assignment</TabsTrigger>
-						<TabsTrigger value='message'>Message</TabsTrigger>
-						<TabsTrigger value='meetings'>Meetings</TabsTrigger>
-					</TabsList>
-					<TabsContent value='overview'>
-						<OverviewTab />
-					</TabsContent>
-					<TabsContent value='content'>
-						<ContentPage />
-					</TabsContent>
-					<TabsContent value='assignment'>
-						<div>Assignment</div>
-					</TabsContent>
-					<TabsContent value='message'>
-						<MessagePage />
-					</TabsContent>
-					<TabsContent value='meetings'>
-						<MeetingsTab />
-					</TabsContent>
-				</Tabs>
-			</div>
-		</div>
-	)
+		)
 }
 
 const MeetingsTab = () => {

@@ -1,3 +1,4 @@
+import { AddNewMeeting } from '@/actions/postData'
 import { Button } from '@/Components/ui/button'
 import {
 	Form,
@@ -5,18 +6,24 @@ import {
 	FormField,
 	FormItem,
 	FormLabel,
+	FormMessage,
 } from '@/Components/ui/form'
 import { Input } from '@/Components/ui/input'
 import { Textarea } from '@/Components/ui/textarea'
+import { useGlobalState } from '@/misc/GlobalStateContext'
 import { newMeetingSchema } from '@/schemas/meeting'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
 
 function NewMeeting() {
+	const { id } = useParams()
+	const { authToken } = useGlobalState()
+	const navigate = useNavigate()
 	const [meeting, setMeeting] = useState({
-		classId: 'aslkdjas',
+		classId: id ?? '',
 		meetingDate: '',
 		meetingType: 'in-person',
 		meetingNote: '',
@@ -31,7 +38,13 @@ function NewMeeting() {
 	})
 
 	const onSubmit = async (values: z.infer<typeof newMeetingSchema>) => {
-		alert(JSON.stringify(values))
+		const response = await AddNewMeeting(values, authToken)
+		if (response) {
+			alert('Meeting created successfully!')
+			navigate(`/dashboard/classes/${id}/meetings`)
+		} else {
+			alert('Failed to create meeting')
+		}
 	}
 
 	return (
@@ -71,6 +84,7 @@ function NewMeeting() {
 											}}
 										/>
 									</FormControl>
+									<FormMessage />
 								</FormItem>
 							)}
 						/>
@@ -97,6 +111,7 @@ function NewMeeting() {
 											<option value='online'>Online</option>
 										</select>
 									</FormControl>
+									<FormMessage />
 								</FormItem>
 							)}
 						/>
@@ -118,6 +133,7 @@ function NewMeeting() {
 											}}
 										/>
 									</FormControl>
+									<FormMessage />
 								</FormItem>
 							)}
 						/>
@@ -141,6 +157,7 @@ function NewMeeting() {
 												}}
 											/>
 										</FormControl>
+										<FormMessage />
 									</FormItem>
 								)}
 							/>
@@ -165,6 +182,7 @@ function NewMeeting() {
 												}}
 											/>
 										</FormControl>
+										<FormMessage />
 									</FormItem>
 								)}
 							/>

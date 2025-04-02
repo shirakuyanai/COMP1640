@@ -1,10 +1,11 @@
 import { addClassSchema } from '@/schemas/class'
 import { loginInfoSchema } from '@/schemas/login'
+import { newMeetingSchema } from '@/schemas/meeting'
 import { z } from 'zod'
 
 export async function AddNewClass(
 	formData: z.infer<typeof addClassSchema>,
-	authToken: string
+	authToken: string,
 ) {
 	try {
 		console.log('Sending class data:', formData)
@@ -94,7 +95,7 @@ export const LogoutAPI = async ({
 		setAuthToken('')
 		// Clear current user from global state
 		setCurrentUser(null)
-		
+
 		return { error: false, message: 'Logged out successfully' }
 	} catch (err) {
 		console.error('Logout error:', err)
@@ -107,20 +108,31 @@ export const LogoutAPI = async ({
 
 export async function reallocateClass(
 	authToken: string,
-	{ classId, newStudentId, newTutorId }: { classId: string; newStudentId?: string; newTutorId?: string }
+	{
+		classId,
+		newStudentId,
+		newTutorId,
+	}: { classId: string; newStudentId?: string; newTutorId?: string },
 ) {
 	try {
-		console.log('Sending reallocation request:', { classId, newStudentId, newTutorId })
-
-		const response = await fetch(`${import.meta.env.VITE_HOST}/class/reallocate`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authentication: `Bearer ${authToken}`,
-				API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
-			},
-			body: JSON.stringify({ classId, newStudentId, newTutorId }),
+		console.log('Sending reallocation request:', {
+			classId,
+			newStudentId,
+			newTutorId,
 		})
+
+		const response = await fetch(
+			`${import.meta.env.VITE_HOST}/class/reallocate`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authentication: `Bearer ${authToken}`,
+					API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+				},
+				body: JSON.stringify({ classId, newStudentId, newTutorId }),
+			},
+		)
 
 		const data = await response.json()
 		console.log('Reallocation response:', data)
@@ -136,3 +148,30 @@ export async function reallocateClass(
 	}
 }
 
+export async function AddNewMeeting(
+	formData: z.infer<typeof newMeetingSchema>,
+	authToken: string,
+) {
+	try {
+		const response = await fetch(`${import.meta.env.VITE_HOST}/newMeeting`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authentication: `Bearer ${authToken}`,
+				API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+			},
+			body: JSON.stringify(formData),
+		})
+
+		const data = await response.json()
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to create class')
+		}
+
+		return data
+	} catch (error) {
+		console.error('Fetch error:', error)
+		throw error
+	}
+}

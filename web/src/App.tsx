@@ -58,11 +58,11 @@ function App() {
 							element={<MessagePage />}
 						/>
 						<Route
-							path='/dashboard/meetings'
+							path='/dashboard/classes/:id/meetings'
 							element={<MeetingPage />}
 						/>
 						<Route
-							path='/dashboard/meetings/newMeeting'
+							path='/dashboard/classes/:id/meetings/newMeeting'
 							element={<NewMeeting />}
 						/>
 					</Route>

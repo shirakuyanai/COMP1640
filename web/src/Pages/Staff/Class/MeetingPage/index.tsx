@@ -1,6 +1,6 @@
 import { Button } from '@/Components/ui/button'
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 interface Meeting {
 	meetingId: string
@@ -35,13 +35,16 @@ const sampleMeetings: Meeting[] = [
 
 function MeetingPage() {
 	const [meetings, setMeetings] = useState(sampleMeetings)
+	const { id } = useParams()
 
 	return (
 		<div className='p-6 bg-gray-100 min-h-screen'>
 			<div className='flex flex-row justify-between'>
 				<h1 className='text-3xl font-bold mb-6'>Meetings</h1>
 				<Button>
-					<Link to={'/dashboard/meetings/newMeeting'}>New Meeting</Link>
+					<Link to={`/dashboard/classes/${id}/meetings/newMeeting`}>
+						New Meeting
+					</Link>
 				</Button>
 			</div>
 
