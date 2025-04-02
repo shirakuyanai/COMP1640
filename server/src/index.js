@@ -70,6 +70,9 @@ const io = new Server(server, {
 
 const usersSockets = {}
 
+// Mount routes
+app.use('/api/class', classRoutes)
+
 // Connect to the database first, then do everything else later
 connectToDatabase().then(() => {
 	
@@ -254,9 +257,6 @@ connectToDatabase().then(() => {
 			res.status(response.status || 200).json(response)
 		},
 	)
-
-	// Register routes
-	app.use('/class', classRoutes)
 
 	// Start server
 	server.listen(PORT, () => console.log(`Server listening on port ${PORT}`))

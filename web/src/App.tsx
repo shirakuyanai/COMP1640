@@ -14,7 +14,9 @@ import { GlobalStateProvider } from './misc/GlobalStateContext'
 import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
 import MeetingPage from './Pages/Staff/Meeting'
-import { Toaster } from '@/Components/ui/toaster'
+import { Toaster } from 'react-hot-toast'
+import StudentSchedule from './Pages/Student/Schedule'
+import TutorSchedule from './Pages/Tutor/Schedule'
 
 function App() {
 	return (
@@ -40,7 +42,10 @@ function App() {
 							path='/dashboard/overview'
 							element={<OverViewPage />}
 						/>
-
+						<Route
+							path='/dashboard/schedule'
+							element={<StudentSchedule />}
+						/>
 						<Route
 							index
 							path='/dashboard/classes'
@@ -74,9 +79,13 @@ function App() {
 							path='/staff/meeting'
 							element={<MeetingPage />}
 						/>
+						<Route
+							path='/staff/schedule'
+							element={<TutorSchedule />}
+						/>
 					</Route>
 				</Routes>
-				<Toaster />
+				<Toaster position="top-right" />
 			</Router>
 		</GlobalStateProvider>
 	)

@@ -417,3 +417,63 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 		}
 	}
 }
+
+export async function getStudentClasses(studentId) {
+	try {
+		const classes = await db.query(`
+			SELECT 
+				c.*,
+				u.name as tutor_name,
+				u.id as tutor_id
+			FROM class c
+			JOIN users u ON c.tutor_id = u.id
+			WHERE c.student_id = $1
+			ORDER BY c.start_date ASC
+		`, [studentId])
+
+		return classes.map(cls => ({
+			id: cls.id,
+			className: cls.class_name,
+			startDate: cls.start_date,
+			endDate: cls.end_date,
+			schedule: cls.schedule,
+			tutor: {
+				id: cls.tutor_id,
+				name: cls.tutor_name
+			}
+		}))
+	} catch (error) {
+		console.error('Error in getStudentClasses:', error)
+		return { error: 'Failed to fetch student classes' }
+	}
+}
+
+export async function getTutorClasses(tutorId) {
+	try {
+		const classes = await db.query(`
+			SELECT 
+				c.*,
+				u.name as student_name,
+				u.id as student_id
+			FROM class c
+			JOIN users u ON c.student_id = u.id
+			WHERE c.tutor_id = $1
+			ORDER BY c.start_date ASC
+		`, [tutorId])
+
+		return classes.map(cls => ({
+			id: cls.id,
+			className: cls.class_name,
+			startDate: cls.start_date,
+			endDate: cls.end_date,
+			schedule: cls.schedule,
+			student: {
+				id: cls.student_id,
+				name: cls.student_name
+			}
+		}))
+	} catch (error) {
+		console.error('Error in getTutorClasses:', error)
+		return { error: 'Failed to fetch tutor classes' }
+	}
+}
