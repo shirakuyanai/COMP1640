@@ -1,9 +1,9 @@
 import { db } from '../config/db_config.js'
+import { eq, and, inArray } from 'drizzle-orm'
+import Class from '../schema/Class.js'
 import Student from '../schema/Student.js'
 import Tutor from '../schema/Tutor.js'
-import Class from '../schema/Class.js'
 import { Log, logError } from '../lib/logger.js'
-import { and, eq } from 'drizzle-orm'
 import User from '../schema/User.js'
 import { getIO } from '../lib/socket.js' 
 
@@ -29,14 +29,88 @@ export const getAllTutors = async () => {
 	}
 }
 
-export const getAllClasses = async () => {
+export async function getAllClasses() {
 	try {
-		const data = await db.select().from(Class)
-		Log('got all classes')
-		return { status: 200, item: data }
-	} catch (err) {
-		logError('get all classes', err)
-		return { status: 500, error: err }
+		console.log('Starting getAllClasses...')
+		
+		// Get all classes first
+		const classes = await db
+			.select({
+				id: Class.id,
+				className: Class.className,
+				studentId: Class.studentId,
+				tutorId: Class.tutorId,
+				description: Class.description,
+				startDate: Class.startDate,
+				endDate: Class.endDate,
+				schedule: Class.schedule,
+				meetingLink: Class.meetingLink,
+			})
+			.from(Class)
+			.execute()
+
+		console.log('Retrieved classes:', classes)
+
+		if (!classes) {
+			console.error('No classes found')
+			return {
+				status: 200,
+				item: []
+			}
+		}
+
+		// Get student and tutor details for each class
+		const classesWithDetails = await Promise.all(
+			classes.map(async (classItem) => {
+				try {
+					// Get student details with username from User table
+					const student = await db
+						.select({
+							username: User.username,
+						})
+						.from(Student)
+						.innerJoin(User, eq(Student.userId, User.userId))
+						.where(eq(Student.studentId, classItem.studentId))
+						.execute()
+
+					// Get tutor details with username from User table
+					const tutor = await db
+						.select({
+							username: User.username,
+						})
+						.from(Tutor)
+						.innerJoin(User, eq(Tutor.userId, User.userId))
+						.where(eq(Tutor.tutorId, classItem.tutorId))
+						.execute()
+
+					return {
+						...classItem,
+						studentUsername: student[0]?.username || 'Unknown',
+						tutorUsername: tutor[0]?.username || 'Unknown',
+					}
+				} catch (error) {
+					console.error('Error getting details for class:', classItem.id, error)
+					return {
+						...classItem,
+						studentUsername: 'Unknown',
+						tutorUsername: 'Unknown',
+					}
+				}
+			})
+		)
+
+		console.log('Classes with details:', classesWithDetails)
+
+		return {
+			status: 200,
+			item: classesWithDetails || [],
+		}
+	} catch (error) {
+		console.error('Error in getAllClasses:', error)
+		return {
+			status: 500,
+			item: { error: error.message || 'Failed to fetch classes' },
+		}
 	}
 }
 
@@ -80,17 +154,8 @@ export const getClassesForUser = async (userId, role) => {
 			return { status: 404, error: 'invalid user' }
 		}
 
-		const user_user = await db
-			.select()
-			.from(User)
-			.where(eq(User.userId, userId))
-
-		if (!user_user || user_user.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
-		}
-
-		let data = await db
+		// Get classes for the user
+		let classes = await db
 			.select()
 			.from(Class)
 			.where(
@@ -99,63 +164,70 @@ export const getClassesForUser = async (userId, role) => {
 					: eq(Class.tutorId, user[0].tutorId),
 			)
 
-		if (!data || data.length === 0) {
-			logError('find classes with user', 'classes not found')
-			return { status: 404, error: 'classes not found' }
+		if (!classes || classes.length === 0) {
+			return { status: 200, item: [] } // Return empty array instead of error
 		}
 
-		let user2 = null
-		switch (role) {
-			case 'student': {
-				user2 = await db
-					.select()
-					.from(Tutor)
-					.where(eq(Tutor.tutorId, data[0].tutorId))
-				break
-			}
-			case 'tutor': {
-				user2 = await db
-					.select()
-					.from(Student)
-					.where(eq(Student.studentId, data[0].studentId))
-				break
-			}
-			default: {
-				return { status: 404, error: 'invalid user' }
-			}
+		// Get all unique student and tutor IDs from the classes
+		const studentIds = [...new Set(classes.map(c => c.studentId))]
+		const tutorIds = [...new Set(classes.map(c => c.tutorId))]
+
+		let students = []
+		let tutors = []
+
+		// Only fetch if we have IDs to fetch
+		if (studentIds.length > 0) {
+			students = await db
+				.select({
+					studentId: Student.studentId,
+					username: User.username,
+				})
+				.from(Student)
+				.innerJoin(User, eq(Student.userId, User.userId))
+				.where(inArray(Student.studentId, studentIds))
 		}
 
-		if (!user2 || user2.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
-		}
-		const user2_user = await db
-			.select()
-			.from(User)
-			.where(eq(User.userId, user2[0].userId))
-
-		if (!user2_user || user2_user.length === 0) {
-			logError('get classes for user', 'invalid user')
-			return { status: 404, error: 'invalid user' }
+		if (tutorIds.length > 0) {
+			tutors = await db
+				.select({
+					tutorId: Tutor.tutorId,
+					username: User.username,
+				})
+				.from(Tutor)
+				.innerJoin(User, eq(Tutor.userId, User.userId))
+				.where(inArray(Tutor.tutorId, tutorIds))
 		}
 
-		const updatedData = data.map((current_class) => ({
-			...current_class,
-			studentUsername: user_user[0]?.username || 'Unknown Student',
-			tutorUsername: user2_user[0]?.username || 'Unknown Tutor',
+		// Create lookup maps
+		const studentMap = Object.fromEntries(
+			students.map(s => [s.studentId, s.username])
+		)
+		const tutorMap = Object.fromEntries(
+			tutors.map(t => [t.tutorId, t.username])
+		)
+
+		// Map the classes with usernames
+		const classesWithUsernames = classes.map(classItem => ({
+			...classItem,
+			studentUsername: studentMap[classItem.studentId] || 'Unknown Student',
+			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
 		}))
 
+<<<<<<< HEAD
 		console.log(updatedData) 
 
+=======
+>>>>>>> origin/main
 		Log('classes found with user')
 
 		return {
 			status: 200,
-			item: updatedData,
+			item: classesWithUsernames,
 		}
 	} catch (err) {
+		console.error('Error in getClassesForUser:', err)
 		logError('find classes with user', err)
-		return { status: 500, error: err }
+		return { status: 500, error: err.message || 'Internal server error' }
 	}
 }
 
@@ -235,17 +307,17 @@ export const getDataForCreatingClass = async () => {
 	}
 }
 
-export const addNewClass = async ({ studentId, tutorId, className }) => {
-	if (!studentId || !tutorId || !className)
-		return { status: 400, error: 'Missing required fields' }
-
+export const addNewClass = async ({ studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink }) => {
 	try {
-		const newRow = await db
-			.insert(Class)
-			.values({ studentId, tutorId, className })
-			.onConflictDoNothing()
-			.returning()
+		console.log('Received data:', { studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink })
+		
+		// Validate required fields
+		if (!studentId || !tutorId || !className) {
+			console.log('Missing required fields:', { studentId, tutorId, className })
+			return { status: 400, error: 'Missing required fields' }
+		}
 
+<<<<<<< HEAD
 		Log('new class added')
 
 		const totalStudents = await db.select().from(Student)
@@ -263,9 +335,155 @@ export const addNewClass = async ({ studentId, tutorId, className }) => {
 		})
 
 		return { status: 200, item: newRow }
+=======
+		// Validate student exists
+		const student = await db.select().from(Student).where(eq(Student.studentId, studentId))
+		console.log('Found student:', student)
+		if (!student || student.length === 0) {
+			return { status: 400, error: 'Invalid student ID' }
+		}
+
+		// Validate tutor exists
+		const tutor = await db.select().from(Tutor).where(eq(Tutor.tutorId, tutorId))
+		console.log('Found tutor:', tutor)
+		if (!tutor || tutor.length === 0) {
+			return { status: 400, error: 'Invalid tutor ID' }
+		}
+
+		// Validate dates if provided
+		if (startDate && endDate) {
+			const start = new Date(startDate)
+			const end = new Date(endDate)
+			console.log('Dates:', { start, end })
+			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+				return { status: 400, error: 'Invalid date format' }
+			}
+			if (start > end) {
+				return { status: 400, error: 'Start date must be before end date' }
+			}
+		}
+
+		// Validate schedule if provided
+		if (schedule) {
+			console.log('Schedule:', schedule)
+			if (!Array.isArray(schedule.days) || !Array.isArray(schedule.times)) {
+				return { status: 400, error: 'Invalid schedule format' }
+			}
+		}
+
+		const values = { 
+			studentId, 
+			tutorId, 
+			className,
+			description: description || null,
+			startDate: startDate ? new Date(startDate) : null,
+			endDate: endDate ? new Date(endDate) : null,
+			schedule: schedule || null,
+			meetingLink: meetingLink || null
+		}
+		console.log('Inserting values:', values)
+
+		try {
+			const newRow = await db
+				.insert(Class)
+				.values(values)
+				.onConflictDoNothing()
+				.returning()
+
+			console.log('Insert result:', newRow)
+
+			if (!newRow || newRow.length === 0) {
+				return { status: 500, error: 'Failed to create class' }
+			}
+
+			Log('new class added')
+			return { status: 200, item: newRow[0] }
+		} catch (dbError) {
+			console.error('Database error:', dbError)
+			return { status: 500, error: `Database error: ${dbError.message}` }
+		}
+>>>>>>> origin/main
 	} catch (err) {
+		console.error('Error in addNewClass:', err)
 		logError('add new class', err)
-		return { status: 500, item: err }
+		return { status: 500, error: `Server error: ${err.message}` }
+	}
+}
+
+export async function reallocateClass({ classId, newStudentId, newTutorId }) {
+	try {
+		console.log('Reallocation request:', { classId, newStudentId, newTutorId })
+
+		// Validate that the class exists
+		const existingClass = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+			.execute()
+
+		if (!existingClass || existingClass.length === 0) {
+			return { status: 404, item: { error: 'Class not found' } }
+		}
+
+		// Build update object based on provided values
+		const updateObj = {}
+		if (newStudentId) {
+			// Validate that the student exists
+			const student = await db
+				.select()
+				.from(Student)
+				.where(eq(Student.studentId, newStudentId))
+				.execute()
+
+			if (!student || student.length === 0) {
+				return { status: 404, item: { error: 'Student not found' } }
+			}
+			updateObj.studentId = newStudentId
+		}
+
+		if (newTutorId) {
+			// Validate that the tutor exists
+			const tutor = await db
+				.select()
+				.from(Tutor)
+				.where(eq(Tutor.tutorId, newTutorId))
+				.execute()
+
+			if (!tutor || tutor.length === 0) {
+				return { status: 404, item: { error: 'Tutor not found' } }
+			}
+			updateObj.tutorId = newTutorId
+		}
+
+		// If no updates are provided
+		if (Object.keys(updateObj).length === 0) {
+			return { status: 400, item: { error: 'No changes requested' } }
+		}
+
+		// Perform the update
+		const result = await db
+			.update(Class)
+			.set(updateObj)
+			.where(eq(Class.id, classId))
+			.execute()
+
+		console.log('Update result:', result)
+		return { 
+			status: 200, 
+			item: { 
+				success: true, 
+				message: 'Class reallocated successfully' 
+			} 
+		}
+
+	} catch (error) {
+		console.error('Error in reallocateClass:', error)
+		return { 
+			status: 500, 
+			item: { 
+				error: error.message || 'Failed to reallocate class' 
+			} 
+		}
 	}
 }
 

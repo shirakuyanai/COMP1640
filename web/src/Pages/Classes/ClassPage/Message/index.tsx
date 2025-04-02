@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { FaPaperPlane } from 'react-icons/fa6'
 
-const MessagePage: React.FC = () => {
+const MessagePage = ({ found_class }: { found_class: any }) => {
 	const params = useParams()
 	const navigate = useNavigate()
 	const { authToken, currentUser } = useGlobalState()
@@ -34,19 +34,13 @@ const MessagePage: React.FC = () => {
 
 	const getData = async () => {
 		if (!params.id) navigate('/')
-		const found_class = await getClassById({
-			token: authToken,
-			classId: params.id ?? '',
-			userId: currentUser.id,
-			role: currentUser.role,
-		})
 
-		// const found_class = await getClassById(authToken, params.id ?? '')
 		if (!found_class) {
 			navigate('/')
 		} else {
 			setCurrentClass(found_class)
 		}
+		
 		const found_conversation = await getConversation({
 			token: authToken,
 			classId: params.id ?? '',

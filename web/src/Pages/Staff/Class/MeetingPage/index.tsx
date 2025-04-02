@@ -1,5 +1,15 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { getMeetingsOfAClass } from '@/actions/getData'
+import { updateMeetingAttendance } from '@/actions/postData'
+import { Button } from '@/Components/ui/button'
+import { Form, FormField } from '@/Components/ui/form'
+import { Input } from '@/Components/ui/input'
+import { useGlobalState } from '@/misc/GlobalStateContext'
+import { meetingAttendanceSchema } from '@/schemas/meeting'
+import { zodResolver } from '@hookform/resolvers/zod'
+import React, { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { Link, useParams } from 'react-router-dom'
+import { z } from 'zod'
 
 interface Meeting {
 	meetingId: string
@@ -12,78 +22,145 @@ interface Meeting {
 }
 
 function MeetingPage() {
-	const [meetings, setMeetings] = useState<Meeting[]>([])
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
+	const [meetings, setMeetings] = useState([])
+	const { id } = useParams()
+	const { authToken } = useGlobalState()
+
+	const form = useForm<z.infer<typeof meetingAttendanceSchema>>({
+		resolver: zodResolver(meetingAttendanceSchema),
+		defaultValues: {
+			meetings: meetings.map((meeting) => ({
+				meetingId: (meeting as MeetingType).meetingId,
+				status: (meeting as MeetingType).studentAttended ?? 0,
+			})),
+		},
+	})
 
 	useEffect(() => {
-		const fetchMeetings = async () => {
-			try {
-				const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/meetings`)
-				const data = await res.json()
-				setMeetings(data)
-			} catch (err) {
-				console.error('Failed to fetch meetings:', err)
-				setError('Failed to load meetings.')
-			} finally {
-				setLoading(false)
-			}
-		}
+		meetings.forEach((meeting, i) => {
+			form.setValue(
+				`meetings.${i}.status`,
+				(meeting as MeetingType).studentAttended || 0,
+			)
+		})
+	}, [meetings])
+	const getMeetings = async () => {
+		const response = await getMeetingsOfAClass({
+			classId: id ?? '',
+			token: authToken,
+		})
 
-		fetchMeetings()
+		setMeetings(response)
+	}
+
+	const onSubmit = async (values: z.infer<typeof meetingAttendanceSchema>) => {
+		const response = await updateMeetingAttendance(values, authToken)
+		alert(response)
+	}
+
+	useEffect(() => {
+		getMeetings()
 	}, [])
 
 	return (
 		<div className='p-6 bg-gray-100 min-h-screen'>
-			<h1 className='text-3xl font-bold mb-6'>Meetings</h1>
+			<div className='flex flex-row justify-between'>
+				<h1 className='text-3xl font-bold mb-6'>Meeting records</h1>
+				<Button>
+					<Link to={`/dashboard/classes/${id}/meetings/newMeeting`}>
+						New Meeting
+					</Link>
+				</Button>
+			</div>
+
+			{/* Meetings Table */}
 
 			<div className='bg-white p-6 rounded-lg shadow-md'>
-				<h2 className='text-xl font-semibold mb-4'>
-					Upcoming & Past Meetings
-				</h2>
-
-				{loading ? (
-					<p>Loading meetings...</p>
-				) : error ? (
-					<p className='text-red-500'>{error}</p>
-				) : meetings.length === 0 ? (
-					<p>No meetings found.</p>
-				) : (
-					<table className='w-full border-collapse'>
-						<thead>
-							<tr className='bg-gray-200'>
-								<th className='p-3 text-left'>Class</th>
-								<th className='p-3 text-left'>Tutor</th>
-								<th className='p-3 text-left'>Date & Time</th>
-								<th className='p-3 text-left'>Type</th>
-								<th className='p-3 text-left'>Notes</th>
-								<th className='p-3 text-left'>Meeting Link</th>
-							</tr>
-						</thead>
-						<tbody>
-							{meetings.map((meeting) => (
-								<tr key={meeting.meetingId} className='border-t'>
-									<td className='p-3'>{meeting.class || '-'}</td>
-									<td className='p-3'>{meeting.tutorName || '-'}</td>
-									<td className='p-3'>{meeting.meetingDate}</td>
-									<td className='p-3 capitalize'>{meeting.meetingType}</td>
-									<td className='p-3'>{meeting.meetingNotes || 'N/A'}</td>
-									<td className='p-3'>
-										{meeting.meetingType === 'online' ? (
-											<Link
-												to={`/videochat/${meeting.meetingId}`}
-												className='text-blue-600 underline'
-											>
-												Join
-											</Link>
-										) : (
-											'N/A'
-										)}
-									</td>
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)}>
+						<table className='w-full border-collapse'>
+							<thead>
+								<tr className='bg-gray-200'>
+									<th className='p-3 text-left'>Date & Time</th>
+									<th className='p-3 text-left'>Type</th>
+									<th className='p-3 text-left'>Notes</th>
+									<th className='p-3 text-left'>Meeting Link</th>
+									<th className='p-3 text-left'>Location</th>
+									<th className='p-3 text-left'>Attended</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{meetings.map((meeting, i) => (
+									<tr
+										key={i}
+										className='border-t'
+									>
+										<td className='p-3'>
+											{(meeting as MeetingType).meetingDate}
+										</td>
+										<td className='p-3 capitalize'>
+											{(meeting as MeetingType).meetingType}
+										</td>
+										<td className='p-3'>
+											{(meeting as MeetingType).meetingNotes || 'N/A'}
+										</td>
+										<td className='p-3'>
+											{(meeting as MeetingType).meetingType === 'online' ? (
+												<a
+													href={(meeting as MeetingType).meetingLink}
+													target='_blank'
+													rel='noopener noreferrer'
+													className='text-blue-600 underline'
+												>
+													Join
+												</a>
+											) : (
+												'N/A'
+											)}
+										</td>
+										<td className='p-3'>
+											{(meeting as MeetingType).location || 'N/A'}
+										</td>
+										<td className='p-3'>
+											<Input
+												type='hidden'
+												value={(meeting as MeetingType).meetingId}
+												{...form.register(`meetings.${i}.meetingId`)}
+											/>
+											<FormField
+												control={form.control}
+												name={`meetings.${i}.status`}
+												render={({ field }) => (
+													<select
+														className='border-1 rounded-md p-2'
+														value={field.value ?? 0}
+														onChange={(e) => {
+															field.onChange(Number(e.target.value))
+														}}
+													>
+														<option value={0}>Not yet</option>
+														<option value={1}>Attended</option>
+														<option value={2}>Absent</option>
+													</select>
+												)}
+											/>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+						<Button
+							type='submit'
+							className='w-fit'
+						>
+							Save
+						</Button>
+					</form>
+				</Form>
+				{meetings.length === 0 && (
+					<div className='bg-white p-6 rounded-lg shadow-md flex justify-center'>
+						<p className='text-gray-500'>No meetings found.</p>
+					</div>
 				)}
 			</div>
 		</div>

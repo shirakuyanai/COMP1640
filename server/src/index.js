@@ -37,13 +37,13 @@ import {
 	Login,
 } from './lib/auth.js'
 
-import { Log } from './lib/logger.js'
-
 import {
 	addNewClass,
 	getClassById,
 	getClassesForUser,
 	getDataForCreatingClass,
+	reallocateClass,
+	getAllClasses,
 } from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
 import {
@@ -51,6 +51,15 @@ import {
 	getMessagesOfConversation,
 	saveMessage,
 } from './db/message.js'
+
+import { Server } from 'socket.io'
+import http from 'http'
+import { Log } from './lib/logger.js'
+import {
+	changeMeetingAttendance,
+	getAllMeetingsOfAClass,
+	newMeeting,
+} from './db/meeting.js'
 
 const usersSockets = {}
 
@@ -131,7 +140,52 @@ connectToDatabase().then(() => {
 				studentId: req.body.studentId,
 				tutorId: req.body.tutorId,
 				className: req.body.className,
+				description: req.body.description,
+				startDate: req.body.startDate,
+				endDate: req.body.endDate,
+				schedule: req.body.schedule,
+				meetingLink: req.body.meetingLink,
 			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/newMeeting',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await newMeeting({
+				classId: req.body.classId,
+				meetingDate: req.body.meetingDate,
+				meetingType: req.body.meetingType,
+				meetingNote: req.body.meetingNote,
+				meetingLink: req.body.meetingLink,
+				location: req.body.location,
+				studentAttended: req.body.studentAttended,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/changeMeetingAttendance',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await changeMeetingAttendance({
+				meetings: req.body.meetings,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.get(
+		'/getMeetingsOfAClass/:classId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getAllMeetingsOfAClass(req.params.classId)
 			res.status(response.status).json(response.item)
 		},
 	)
@@ -170,6 +224,34 @@ connectToDatabase().then(() => {
 	)
 
 	app.get(
+		'/getAllClasses',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			try {
+				const response = await getAllClasses()
+
+				if (!response) {
+					console.error('getAllClasses returned null/undefined')
+					return res.status(500).json({ error: 'Internal server error' })
+				}
+
+				res.status(response.status).json(response.item)
+			} catch (error) {
+				console.error('Error in /getAllClasses endpoint:', error)
+				res
+					.status(500)
+					.json({ error: error.message || 'Internal server error' })
+			}
+		},
+	)
+
+	///////////////////////////////////
+
+	// User functions
+
+	app.get(
 		'/getCurrentUser',
 		authenticateApp,
 		authenticateToken,
@@ -193,6 +275,18 @@ connectToDatabase().then(() => {
 		},
 	)
 
-    const PORT = process.env.PORT || 5000
+	app.post(
+		'/class/reallocate',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			const response = await reallocateClass(req.body)
+			res.status(response.status || 200).json(response)
+		},
+	)
+
+  const PORT = process.env.PORT || 5000
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })
+

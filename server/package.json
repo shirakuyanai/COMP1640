@@ -6,12 +6,12 @@
 	"scripts": {
 		"test": "nodemon --env-file=.env.local src/test",
 		"start": "node src/index",
-		"dev": "cross-env NODE_ENV=development nodemon --env-file=.env.local src/index",
+		"dev": "cross-env NODE_ENV=development nodemon -r dotenv/config src/index.js dotenv_config_path=.env.local",
 		"prod": "NODE_ENV=production nodemon --env-file=.env.production src/index",
 		"debug": "NODE_ENV=debug nodemon --env-file=.env.local src/index",
 		"generate": "drizzle-kit generate --config=./src/config/drizzle.config.js",
 		"migrate": "drizzle-kit migrate --config=./src/config/drizzle.config.js",
-		"seed": "cross-env NODE_ENV=development node --env-file=.env.local src/seed.js"
+		"seed": "cross-env NODE_ENV=development node -r dotenv/config src/seed.js dotenv_config_path=.env.local"
 	},
 	"author": "",
 	"type": "module",

@@ -6,23 +6,24 @@ import {
 	timestamp,
 	boolean,
 	unique,
+	integer,
 } from 'drizzle-orm/pg-core'
 
-import Tutor from './Tutor.js'
-import User from './User.js'
+import Class from './Class.js'
 
 // Define the ENUM type separately
 export const meetingTypeEnum = pgEnum('meetingType', ['in-person', 'online'])
 
 export const Meeting = pgTable('meeting', {
 	meetingId: uuid('meetingId').defaultRandom().unique().primaryKey(),
-	userId: uuid('userId').references(() => User.userId),
-	tutorId: uuid('tutorId')
-		.references(() => Tutor.tutorId)
-		.notNull(),
+	classId: uuid('classId').references(() => Class.id),
 	meetingDate: timestamp('meetingDate', { withTimezone: true }).notNull(),
 	meetingType: meetingTypeEnum('meetingType').notNull(), // Use the defined ENUM
 	meetingNotes: text('meetingNotes'),
 	meetingLink: text('meetingLink'),
-	studentAttended: boolean('studentAttended').default(false).notNull(),
+	location: text('location'),
+	studentAttended: integer('studentAttended').default(0).notNull(),
+	// 0: not yet
+	// 1: attended
+	// 2: absent
 })
