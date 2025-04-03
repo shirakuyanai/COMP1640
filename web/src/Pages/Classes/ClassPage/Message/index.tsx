@@ -57,7 +57,8 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 			})
 
 			if (found_messages)
-				setMessages((prevMessages) => [...prevMessages, ...found_messages])
+				// setMessages((prevMessages) => [...prevMessages, ...found_messages])
+				setMessages(found_messages)
 		} else {
 			navigate('/')
 		}
@@ -67,7 +68,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 		if (socket) {
 			if (conversation) socket.emit('joinRoom', (conversation as any).id)
 			socket.on('receiveMessage', (messageData: any) => {
-				setMessages((prevMessages) => [...prevMessages, messageData])
+				setMessages((prevMessages) => [messageData, ...prevMessages])
 			})
 
 			return () => {
@@ -97,7 +98,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 				sendDate: new Date().toISOString(),
 			}
 
-			setMessages((prevMessages) => [...prevMessages, messageData])
+			setMessages((prevMessages) => [messageData, ...prevMessages])
 
 			socket.emit('sendMessage', {
 				message: messageData,
@@ -169,7 +170,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 													className='rounded-full w-10 h-10'
 												/>
 												<div>
-													<div className='bg-purple-500 text-white p-2 rounded-lg lg:max-w-200'>
+													<div className='bg-blue-500 text-white p-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg'>
 														<p className='break-words'>
 															{message.messageContent}
 														</p>

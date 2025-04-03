@@ -7,6 +7,7 @@ import Message from '../schema/Message.js'
 import User from '../schema/User.js'
 import Conversation from '../schema/Conversation.js'
 import { Log, logError } from '../lib/logger.js'
+import client from '../config/redis.config.js'
 
 export const getMessagesOfConversation = async ({
 	conversationId,
@@ -130,21 +131,30 @@ export const createConversation = async (classId) => {
 
 const getMessages = async ({ conversationId, offset }) => {
 	try {
-		const messages = await db
-			.select()
-			.from(Message)
-			.where(eq(Message.conversationId, conversationId))
-			.orderBy(desc(Message.sendDate)) // fetch the latest messages first
-			.offset(offset)
-			.limit(20)
+		const key = `getMessages-conversation:${conversationId}`
+		let cached = await client.get(key)
 
-		if (!messages || messages.length === 0) {
-			Log('no messages found')
-			return { status: 200, item: [] }
+		if (!cached) {
+			const messages = await db
+				.select()
+				.from(Message)
+				.where(eq(Message.conversationId, conversationId))
+				.orderBy(desc(Message.sendDate)) // fetch the latest messages first
+			// .offset(offset)
+			// .limit(20)
+
+			if (!messages || messages.length === 0) {
+				Log('no messages found')
+				return { status: 200, item: [] }
+			}
+
+			cached = client.set(key, JSON.stringify(messages))
+			Log('messages found')
+			return { status: 200, item: messages }
 		}
 
 		Log('messages found')
-		return { status: 200, item: messages }
+		return { status: 200, item: JSON.parse(cached) }
 	} catch (err) {
 		logError('get messages', err)
 		return { status: 500, item: err }
@@ -170,6 +180,10 @@ export const saveMessage = async ({
 			logError('save message', 'message not saved')
 			return { status: 401, item: 'message not saved' }
 		}
+
+		const key = `getMessages-conversation:${conversationId}`
+
+		client.del(key)
 
 		Log('message saved')
 		return { status: 200, item: message[0] }
