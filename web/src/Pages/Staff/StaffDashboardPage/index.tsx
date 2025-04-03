@@ -50,6 +50,9 @@ function StaffDashboardPage() {
   useEffect(() => {
     const socket = io(import.meta.env.VITE_HOST)
 
+    socket.on('connect', () => {
+    })
+
     socket.on('dashboardUpdate', (data: typeof dashboardData) => {
       setDashboardData(data)
     })
@@ -117,14 +120,58 @@ function StaffDashboardPage() {
     }
   }, [authToken])
 
-
   return (
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Welcome, {currentUser?.username}!</h1>
         <p className="text-gray-500">Here's your teaching management overview</p>
       </div>
-      {/* Stat cards + DetailView components here */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{dashboardData.totalClasses}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{dashboardData.activeClasses}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{dashboardData.totalStudents}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Unassigned Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{dashboardData.studentsWithoutClass}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Tutors</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{dashboardData.totalTutors}</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
