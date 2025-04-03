@@ -2,7 +2,7 @@ import { getClassById, getConversation, getMessages } from '@/actions/getData'
 import { getSocket, initializeSocket } from '@/lib/socket'
 import { convertToLocalTimezone } from '@/lib/utils'
 import { useGlobalState } from '@/misc/GlobalStateContext'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { FaPaperPlane } from 'react-icons/fa6'
@@ -40,7 +40,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 		} else {
 			setCurrentClass(found_class)
 		}
-		
+
 		const found_conversation = await getConversation({
 			token: authToken,
 			classId: params.id ?? '',
@@ -78,6 +78,11 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 	}, [currentUser])
 
 	const [message, setMessage] = useState('')
+
+	const messagesEndRef = useRef(null)
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+	}, [messages]) // Runs when messages update
 
 	const sendMessage = () => {
 		if (message && socket && conversation && currentUser) {
@@ -130,11 +135,9 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 					<div className='flex-1 p-4 overflow-y-auto'>
 						<div className='flex flex-col space-y-4'>
 							{/* Example message */}
-
 							{messages.length === 0 && (
 								<div className='text-center text-gray-500'>No messages yet</div>
 							)}
-
 							{messages.length > 0 &&
 								messages.map(
 									(message, i) =>
@@ -144,7 +147,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 												key={i}
 											>
 												<div>
-													<div className='bg-blue-500 text-white p-2 rounded-lg lg:max-w-200'>
+													<div className='bg-blue-500 text-white p-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg'>
 														<p className='break-words'>
 															{message.messageContent}
 														</p>
@@ -175,6 +178,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 											</div>
 										)),
 								)}
+							<div ref={messagesEndRef} /> {/* Invisible div at the bottom */}
 						</div>
 					</div>
 

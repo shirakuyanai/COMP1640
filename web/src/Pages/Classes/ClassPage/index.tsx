@@ -38,7 +38,7 @@ function ClassPage() {
 	if (id && found_class)
 		return (
 			<div>
-				<div className='bg-gradient-to-r from-blue-600 to-purple-500 px-30 py-10 flex flex-col gap-5'>
+				<div className='bg-gradient-to-r from-blue-600 to-purple-500 px-5 md:px-30 py-10 flex flex-col gap-5'>
 					<div className='flex flex-row justify-between'>
 						<h1 className='text-3xl text-white font-bold'>
 							{found_class.className ?? 'N/A'}
@@ -53,7 +53,7 @@ function ClassPage() {
 						</div>
 					</div>
 				</div>
-				<div className='px-25 py-10'>
+				<div className='px-5 md:px-25 py-10'>
 					<Tabs defaultValue={param}>
 						<TabsList className='bg-gray-100'>
 							<TabsTrigger value='overview'>Overview</TabsTrigger>
@@ -94,7 +94,7 @@ const MeetingsTab = () => {
 const OverviewTab = () => {
 	return (
 		<div className='grid grid-row-2 gap-5'>
-			<div className='grid grid-cols-3 gap-7'>
+			<div className='grid grid-cols-1 md:grid-cols-3 gap-7'>
 				<div className='col-span-2'>
 					<Card>
 						<CardHeader>
@@ -174,7 +174,7 @@ const OverviewTab = () => {
 					</Card>
 				</div>
 			</div>
-			<div className='grid grid-cols-3 gap-7'>
+			<div className='grid grid-cols-1 md:grid-cols-3 gap-7'>
 				<Card className='col-span-2'>
 					<CardHeader>
 						<CardTitle>

@@ -7,6 +7,15 @@ import { FaRightFromBracket } from 'react-icons/fa6'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { LogoutAPI } from '@/actions/postData'
+import { IoMenu } from 'react-icons/io5'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 function StaffSidebar() {
 	const { currentUser, setAuthToken, setCurrentUser } = useGlobalState()
@@ -20,25 +29,64 @@ function StaffSidebar() {
 	}
 
 	return (
-		<div className='flex w-64 flex-col border border-l-0 border-t-0 h-screen fixed top-0 left-0 border-gray-300 gap-4 m-0 p-0'>
-			<div className='flex flex-col gap-2 p-5'>
-				<h1 className='text-2xl mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-700 font-bold'>
+		<>
+			<div className='flex sm:flex-row md:flex-col gap-2 p-5 items-center md:items-start justify-between md:justify-start w-full'>
+				<h1 className='text-2xl text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-700 font-bold text-center items-center'>
 					<Link to='/staff'>eTutoring - Staff</Link>
 				</h1>
-				<MenuButton href='/staff'>
-					<FaChartLine className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Dashboard</p>
-				</MenuButton>
-				<MenuButton href='/staff/classes/new'>
-					<FaHouse className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Add a new class</p>
-				</MenuButton>
-				<MenuButton href='/staff/reallocate'>
-					<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Reallocate student(s)</p>
-				</MenuButton>
+				<div className='hidden md:flex flex-col gap-4'>
+					<br />
+					<MenuButton href='/staff'>
+						<FaChartLine className='text-gray-600 h-5 w-5' />{' '}
+						<p className='text-sm'>Dashboard</p>
+					</MenuButton>
+					<MenuButton href='/staff/classes/new'>
+						<FaHouse className='text-gray-600 h-5 w-5' />{' '}
+						<p className='text-sm'>Add a new class</p>
+					</MenuButton>
+					<MenuButton href='/staff/reallocate'>
+						<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
+						<p className='text-sm'>Reallocate student(s)</p>
+					</MenuButton>
+				</div>
+				<div className='flex md:hidden'>
+					<DropdownMenu>
+						<DropdownMenuTrigger>
+							<IoMenu size={35} />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem>
+								<MenuButton href='/staff'>
+									<FaChartLine className='text-gray-600 h-5 w-5' />{' '}
+									<p className='text-sm'>Dashboard</p>
+								</MenuButton>
+							</DropdownMenuItem>
+							<DropdownMenuItem>
+								<MenuButton href='/staff/classes/new'>
+									<FaHouse className='text-gray-600 h-5 w-5' />{' '}
+									<p className='text-sm'>Add a new class</p>
+								</MenuButton>
+							</DropdownMenuItem>
+							<DropdownMenuItem>
+								<MenuButton href='/staff/reallocate'>
+									<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
+									<p className='text-sm'>Reallocate student(s)</p>
+								</MenuButton>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuLabel>
+								<div className='flex flex-row gap-4 align-middle items-center justify-around'>
+									<h4 className='text-sm font-semibold'>
+										{currentUser?.username}
+									</h4>
+									<button onClick={handleLogout}>Logout</button>
+								</div>
+							</DropdownMenuLabel>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			</div>
-			<div className='fixed bottom-0 border border-l-0 border-r-0 border-b-0 border-gray-300 w-64 p-5'>
+			<div className='fixed bottom-0 border border-l-0 border-r-0 border-b-0 border-gray-300 w-64 p-5 hidden md:flex'>
 				<div className='flex flex-col gap-4'>
 					<div className='flex flex-row gap-4 align-middle items-center justify-between'>
 						<div className='flex flex-row gap-4 align-middle items-center'>
@@ -61,7 +109,7 @@ function StaffSidebar() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 
