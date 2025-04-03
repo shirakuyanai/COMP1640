@@ -31,7 +31,7 @@ export const getAllTutors = async () => {
 export async function getAllClasses() {
 	try {
 		console.log('Starting getAllClasses...')
-		
+
 		// Get all classes first
 		const classes = await db
 			.select({
@@ -54,7 +54,7 @@ export async function getAllClasses() {
 			console.error('No classes found')
 			return {
 				status: 200,
-				item: []
+				item: [],
 			}
 		}
 
@@ -95,7 +95,7 @@ export async function getAllClasses() {
 						tutorUsername: 'Unknown',
 					}
 				}
-			})
+			}),
 		)
 
 		console.log('Classes with details:', classesWithDetails)
@@ -168,8 +168,8 @@ export const getClassesForUser = async (userId, role) => {
 		}
 
 		// Get all unique student and tutor IDs from the classes
-		const studentIds = [...new Set(classes.map(c => c.studentId))]
-		const tutorIds = [...new Set(classes.map(c => c.tutorId))]
+		const studentIds = [...new Set(classes.map((c) => c.studentId))]
+		const tutorIds = [...new Set(classes.map((c) => c.tutorId))]
 
 		let students = []
 		let tutors = []
@@ -199,14 +199,14 @@ export const getClassesForUser = async (userId, role) => {
 
 		// Create lookup maps
 		const studentMap = Object.fromEntries(
-			students.map(s => [s.studentId, s.username])
+			students.map((s) => [s.studentId, s.username]),
 		)
 		const tutorMap = Object.fromEntries(
-			tutors.map(t => [t.tutorId, t.username])
+			tutors.map((t) => [t.tutorId, t.username]),
 		)
 
 		// Map the classes with usernames
-		const classesWithUsernames = classes.map(classItem => ({
+		const classesWithUsernames = classes.map((classItem) => ({
 			...classItem,
 			studentUsername: studentMap[classItem.studentId] || 'Unknown Student',
 			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
@@ -301,10 +301,28 @@ export const getDataForCreatingClass = async () => {
 	}
 }
 
-export const addNewClass = async ({ studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink }) => {
+export const addNewClass = async ({
+	studentId,
+	tutorId,
+	className,
+	description,
+	startDate,
+	endDate,
+	schedule,
+	meetingLink,
+}) => {
 	try {
-		console.log('Received data:', { studentId, tutorId, className, description, startDate, endDate, schedule, meetingLink })
-		
+		console.log('Received data:', {
+			studentId,
+			tutorId,
+			className,
+			description,
+			startDate,
+			endDate,
+			schedule,
+			meetingLink,
+		})
+
 		// Validate required fields
 		if (!studentId || !tutorId || !className) {
 			console.log('Missing required fields:', { studentId, tutorId, className })
@@ -312,14 +330,20 @@ export const addNewClass = async ({ studentId, tutorId, className, description, 
 		}
 
 		// Validate student exists
-		const student = await db.select().from(Student).where(eq(Student.studentId, studentId))
+		const student = await db
+			.select()
+			.from(Student)
+			.where(eq(Student.studentId, studentId))
 		console.log('Found student:', student)
 		if (!student || student.length === 0) {
 			return { status: 400, error: 'Invalid student ID' }
 		}
 
 		// Validate tutor exists
-		const tutor = await db.select().from(Tutor).where(eq(Tutor.tutorId, tutorId))
+		const tutor = await db
+			.select()
+			.from(Tutor)
+			.where(eq(Tutor.tutorId, tutorId))
 		console.log('Found tutor:', tutor)
 		if (!tutor || tutor.length === 0) {
 			return { status: 400, error: 'Invalid tutor ID' }
@@ -346,15 +370,15 @@ export const addNewClass = async ({ studentId, tutorId, className, description, 
 			}
 		}
 
-		const values = { 
-			studentId, 
-			tutorId, 
+		const values = {
+			studentId,
+			tutorId,
 			className,
 			description: description || null,
 			startDate: startDate ? new Date(startDate) : null,
 			endDate: endDate ? new Date(endDate) : null,
 			schedule: schedule || null,
-			meetingLink: meetingLink || null
+			meetingLink: meetingLink || null,
 		}
 		console.log('Inserting values:', values)
 
@@ -386,7 +410,13 @@ export const addNewClass = async ({ studentId, tutorId, className, description, 
 
 export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 	try {
-		console.log('Reallocation request:', { classId, newStudentId, newTutorId })
+		if (!classId || !newStudentId || !newTutorId)
+			return { status: 400, item: { error: 'Missing required fields' } }
+		console.log('Reallocation request:', {
+			classId,
+			newStudentId,
+			newTutorId,
+		})
 
 		// Validate that the class exists
 		const existingClass = await db
@@ -395,9 +425,8 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			.where(eq(Class.id, classId))
 			.execute()
 
-		if (!existingClass || existingClass.length === 0) {
+		if (!existingClass || existingClass.length === 0)
 			return { status: 404, item: { error: 'Class not found' } }
-		}
 
 		// Build update object based on provided values
 		const updateObj = {}
@@ -423,9 +452,9 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 				.where(eq(Tutor.tutorId, newTutorId))
 				.execute()
 
-			if (!tutor || tutor.length === 0) {
+			if (!tutor || tutor.length === 0)
 				return { status: 404, item: { error: 'Tutor not found' } }
-			}
+
 			updateObj.tutorId = newTutorId
 		}
 
@@ -442,21 +471,20 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			.execute()
 
 		console.log('Update result:', result)
-		return { 
-			status: 200, 
-			item: { 
-				success: true, 
-				message: 'Class reallocated successfully' 
-			} 
+		return {
+			status: 200,
+			item: {
+				success: true,
+				message: 'Class reallocated successfully',
+			},
 		}
-
 	} catch (error) {
 		console.error('Error in reallocateClass:', error)
-		return { 
-			status: 500, 
-			item: { 
-				error: error.message || 'Failed to reallocate class' 
-			} 
+		return {
+			status: 500,
+			item: {
+				error: error.message || 'Failed to reallocate class',
+			},
 		}
 	}
 }

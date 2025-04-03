@@ -18,9 +18,9 @@ import { reallocateClass } from '@/actions/postData'
 
 // Schema for the reallocation form
 const reallocateSchema = z.object({
-	classId: z.string().min(1, 'Required'),
-	newStudentId: z.string().optional(),
-	newTutorId: z.string().optional(),
+	classId: z.string().min(1, 'Please select a class'),
+	newStudentId: z.string().min(1, 'Please select a new student'),
+	newTutorId: z.string().min(1, 'Please select a new tutor'),
 })
 
 function ReallocateForm() {
@@ -52,7 +52,7 @@ function ReallocateForm() {
 
 				const [classesData, studentsAndTutorsData] = await Promise.all([
 					getAllClasses(authToken),
-					getDataForCreatingClass(authToken)
+					getDataForCreatingClass(authToken),
 				])
 
 				if (classesData) {
@@ -94,28 +94,39 @@ function ReallocateForm() {
 			setError('')
 			console.log('Form values:', values)
 			const result = await reallocateClass(authToken, values)
-			
+
 			if (result.success) {
 				alert('Class reallocated successfully')
-				// Reset form
-				form.reset()
-				setSelectedClass(null)
+				const newStudent = studentsAndTutors.students.find(
+					(student) => student.studentId === values.newStudentId,
+				)
+				const newTutor = studentsAndTutors.tutors.find(
+					(tutor) => tutor.tutorId === values.newTutorId,
+				)
+
+				setSelectedClass((prevClass) =>
+					prevClass
+						? {
+								...prevClass,
+								studentUsername: newStudent.username,
+								tutorUsername: newTutor.username,
+						  }
+						: null,
+				)
 			} else {
 				setError(result.error || 'Failed to reallocate class')
 			}
 		} catch (error) {
 			console.error('Error in form submission:', error)
-			setError(error instanceof Error ? error.message : 'Failed to reallocate class')
+			setError(
+				error instanceof Error ? error.message : 'Failed to reallocate class',
+			)
 		}
 	}
 
-	if (isLoading) {
-		return <div>Loading...</div>
-	}
+	if (isLoading) return <div>Loading...</div>
 
-	if (error) {
-		return <div className="text-red-500">{error}</div>
-	}
+	if (error) return <div className='text-red-500'>{error}</div>
 
 	return (
 		<Form {...form}>
@@ -124,13 +135,39 @@ function ReallocateForm() {
 				className='flex gap-6 flex-col'
 			>
 				<div className='flex gap-6 flex-col'>
+					{/* Show current class details if a class is selected */}
+					{selectedClass && (
+						<div className='bg-gray-50 p-4 rounded-md'>
+							<h3 className='font-semibold mb-2'>Current Class Details</h3>
+							<p>Class Name: {selectedClass.className}</p>
+							<p>Current Student: {selectedClass.studentUsername}</p>
+							<p>Current Tutor: {selectedClass.tutorUsername}</p>
+							{selectedClass.description && (
+								<p>Description: {selectedClass.description}</p>
+							)}
+							{selectedClass.startDate && (
+								<p>
+									Start Date:{' '}
+									{new Date(selectedClass.startDate).toLocaleDateString()}
+								</p>
+							)}
+							{selectedClass.endDate && (
+								<p>
+									End Date:{' '}
+									{new Date(selectedClass.endDate).toLocaleDateString()}
+								</p>
+							)}
+						</div>
+					)}
 					{/* Class Selection */}
 					<FormField
 						control={form.control}
 						name='classId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Select Class</FormLabel>
+								<FormLabel>
+									Select Class<p className='text-red-500'>*</p>
+								</FormLabel>
 								<FormControl>
 									<select
 										className='border p-4 rounded-md w-full'
@@ -153,32 +190,15 @@ function ReallocateForm() {
 						)}
 					/>
 
-					{/* Show current class details if a class is selected */}
-					{selectedClass && (
-						<div className="bg-gray-50 p-4 rounded-md">
-							<h3 className="font-semibold mb-2">Current Class Details</h3>
-							<p>Class Name: {selectedClass.className}</p>
-							<p>Current Student: {selectedClass.studentUsername}</p>
-							<p>Current Tutor: {selectedClass.tutorUsername}</p>
-							{selectedClass.description && (
-								<p>Description: {selectedClass.description}</p>
-							)}
-							{selectedClass.startDate && (
-								<p>Start Date: {new Date(selectedClass.startDate).toLocaleDateString()}</p>
-							)}
-							{selectedClass.endDate && (
-								<p>End Date: {new Date(selectedClass.endDate).toLocaleDateString()}</p>
-							)}
-						</div>
-					)}
-
 					{/* New Student Selection */}
 					<FormField
 						control={form.control}
 						name='newStudentId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>New Student (Optional)</FormLabel>
+								<FormLabel>
+									New Student<p className='text-red-500'>*</p>
+								</FormLabel>
 								<FormControl>
 									<select
 										className='border p-4 rounded-md w-full'
@@ -207,7 +227,9 @@ function ReallocateForm() {
 						name='newTutorId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>New Tutor (Optional)</FormLabel>
+								<FormLabel>
+									New Tutor<p className='text-red-500'>*</p>
+								</FormLabel>
 								<FormControl>
 									<select
 										className='border p-4 rounded-md w-full'
@@ -231,9 +253,7 @@ function ReallocateForm() {
 					/>
 				</div>
 
-				{error && (
-					<div className="text-red-500">{error}</div>
-				)}
+				{error && <div className='text-red-500'>{error}</div>}
 
 				<div className='self-end'>
 					<Button
@@ -248,4 +268,4 @@ function ReallocateForm() {
 	)
 }
 
-export default ReallocateForm 
+export default ReallocateForm
