@@ -312,14 +312,15 @@ export const authenticateApp = (req, res, next) => {
  */
 const PayloadFromToken = async (token) => {
 	try {
-		if (!process.env.JWT_SECRET_KEY)
+		if (!process.env.JWT_SECRET_KEY) {
 			logError(
 				'decode authentication token',
 				'No token encryption key provided',
 			)
-		return {
-			status: 500,
-			item: 'No token encryption key provided',
+			return {
+				status: 500,
+				item: 'No token encryption key provided',
+			}
 		}
 		const data = await jwt.verify(
 			token,
