@@ -47,7 +47,6 @@ function StaffDashboardPage() {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // 🧠 Your real-time WebSocket logic 👇
   useEffect(() => {
     const socket = io(import.meta.env.VITE_HOST)
 
@@ -60,7 +59,6 @@ function StaffDashboardPage() {
     }
   }, [])
 
-  // 🔁 Initial fetch logic stays too
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -119,8 +117,6 @@ function StaffDashboardPage() {
     }
   }, [authToken])
 
-  // 🔻 ...everything else below (UI, StatCards, DetailView, etc.) stays same from main branch
-  // (No need to paste all that again unless you want me to help edit more)
 
   return (
     <div className="p-8 space-y-8">
