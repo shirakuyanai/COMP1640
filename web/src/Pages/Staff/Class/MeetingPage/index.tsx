@@ -21,27 +21,6 @@ interface Meeting {
 	meetingLink?: string
 }
 
-const sampleMeetings: Meeting[] = [
-	{
-		meetingId: '1',
-		class: 'COMP1640',
-		tutorName: 'Nguyen Thi A',
-		meetingDate: '2025-03-20 10:00 AM',
-		meetingType: 'online',
-		meetingNotes: 'Discuss progress on project.',
-		meetingLink: 'https://meet.google.com/hwj-mmya-xon',
-	},
-	{
-		meetingId: '2',
-		class: 'COMP1640',
-		tutorName: 'Hehe',
-		meetingDate: '2025-03-21 02:00 PM',
-		meetingType: 'in-person',
-		meetingNotes: 'Review last assignment.',
-		meetingLink: 'https://meet.google.com/hwj-mmya-xon', // Updated Google Meet link
-	},
-]
-
 function MeetingPage() {
 	const [meetings, setMeetings] = useState([])
 	const { id } = useParams()

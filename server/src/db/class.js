@@ -5,6 +5,7 @@ import Student from '../schema/Student.js'
 import Tutor from '../schema/Tutor.js'
 import { Log, logError } from '../lib/logger.js'
 import User from '../schema/User.js'
+import { getIO } from '../lib/socket.js' 
 
 export const getAllStudents = async () => {
 	try {
@@ -460,3 +461,4 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 		}
 	}
 }
+
