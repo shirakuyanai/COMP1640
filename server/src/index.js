@@ -53,7 +53,6 @@ import {
 } from './db/message.js'
 
 import { Server } from 'socket.io'
-import http from 'http'
 import { Log } from './lib/logger.js'
 import {
 	changeMeetingAttendance,

@@ -213,11 +213,6 @@ export const getClassesForUser = async (userId, role) => {
 			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
 		}))
 
-<<<<<<< HEAD
-		console.log(updatedData) 
-
-=======
->>>>>>> origin/main
 		Log('classes found with user')
 
 		return {
@@ -317,25 +312,6 @@ export const addNewClass = async ({ studentId, tutorId, className, description, 
 			return { status: 400, error: 'Missing required fields' }
 		}
 
-<<<<<<< HEAD
-		Log('new class added')
-
-		const totalStudents = await db.select().from(Student)
-		const totalTutors = await db.select().from(Tutor)
-		const allClasses = await db.select().from(Class)
-
-		const studentIdsInClass = new Set(allClasses.map(c => c.studentId))
-		const unallocated = totalStudents.filter(s => !studentIdsInClass.has(s.studentId))
-
-		const io = getIO()
-		io.emit('dashboardUpdate', {
-			totalStudents: totalStudents.length,
-			totalTutors: totalTutors.length,
-			unallocatedStudents: unallocated.length,
-		})
-
-		return { status: 200, item: newRow }
-=======
 		// Validate student exists
 		const student = await db.select().from(Student).where(eq(Student.studentId, studentId))
 		console.log('Found student:', student)
@@ -402,7 +378,6 @@ export const addNewClass = async ({ studentId, tutorId, className, description, 
 			console.error('Database error:', dbError)
 			return { status: 500, error: `Database error: ${dbError.message}` }
 		}
->>>>>>> origin/main
 	} catch (err) {
 		console.error('Error in addNewClass:', err)
 		logError('add new class', err)
