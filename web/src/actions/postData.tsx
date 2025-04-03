@@ -8,8 +8,6 @@ export async function AddNewClass(
 	authToken: string,
 ) {
 	try {
-		console.log('Sending class data:', formData)
-
 		const response = await fetch(`${import.meta.env.VITE_HOST}/addNewClass`, {
 			method: 'POST',
 			headers: {
@@ -21,7 +19,6 @@ export async function AddNewClass(
 		})
 
 		const data = await response.json()
-		console.log('Response:', response.status, data)
 
 		if (!response.ok) {
 			throw new Error(data.error || 'Failed to create class')
@@ -115,12 +112,6 @@ export async function reallocateClass(
 	}: { classId: string; newStudentId?: string; newTutorId?: string },
 ) {
 	try {
-		console.log('Sending reallocation request:', {
-			classId,
-			newStudentId,
-			newTutorId,
-		})
-
 		const response = await fetch(
 			`${import.meta.env.VITE_HOST}/class/reallocate`,
 			{
@@ -135,7 +126,6 @@ export async function reallocateClass(
 		)
 
 		const data = await response.json()
-		console.log('Reallocation response:', data)
 
 		if (!response.ok) {
 			throw new Error(data.item?.error || 'Failed to reallocate class')

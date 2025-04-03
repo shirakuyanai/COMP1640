@@ -1,4 +1,3 @@
-import React, { lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Layout from './Pages/layout'
 import LoginPage from './Pages/LoginPage'
@@ -11,7 +10,6 @@ import ReallocatePage from './Pages/Staff/Reallocate'
 import AddClass from './Pages/Staff/Class/AddClass'
 import StaffDashboardPage from './Pages/Staff/StaffDashboardPage'
 import { GlobalStateProvider } from './misc/GlobalStateContext'
-import MessagePage from './Pages/Classes/ClassPage/Message'
 import ClassPage from './Pages/Classes/ClassPage'
 import { Toaster } from '@/Components/ui/toaster'
 import MeetingPage from './Pages/Staff/Class/MeetingPage'
@@ -51,11 +49,6 @@ function App() {
 							index
 							path='/dashboard/classes/:id'
 							element={<ClassPage />}
-						/>
-						<Route
-							index
-							path='/dashboard/classes/:id/message'
-							element={<MessagePage />}
 						/>
 						<Route
 							path='/dashboard/classes/:id/meetings'

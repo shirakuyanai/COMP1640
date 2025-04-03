@@ -5,6 +5,7 @@ import Student from '../schema/Student.js'
 import Tutor from '../schema/Tutor.js'
 import { Log, logError } from '../lib/logger.js'
 import User from '../schema/User.js'
+import { sendMail } from '../lib/mailer.js'
 
 export const getAllStudents = async () => {
 	try {
@@ -30,8 +31,6 @@ export const getAllTutors = async () => {
 
 export async function getAllClasses() {
 	try {
-		console.log('Starting getAllClasses...')
-
 		// Get all classes first
 		const classes = await db
 			.select({
@@ -47,8 +46,6 @@ export async function getAllClasses() {
 			})
 			.from(Class)
 			.execute()
-
-		console.log('Retrieved classes:', classes)
 
 		if (!classes) {
 			console.error('No classes found')
@@ -97,8 +94,6 @@ export async function getAllClasses() {
 				}
 			}),
 		)
-
-		console.log('Classes with details:', classesWithDetails)
 
 		return {
 			status: 200,
@@ -312,30 +307,31 @@ export const addNewClass = async ({
 	meetingLink,
 }) => {
 	try {
-		console.log('Received data:', {
-			studentId,
-			tutorId,
-			className,
-			description,
-			startDate,
-			endDate,
-			schedule,
-			meetingLink,
-		})
-
 		// Validate required fields
 		if (!studentId || !tutorId || !className) {
-			console.log('Missing required fields:', { studentId, tutorId, className })
+			logError(
+				'add a new class',
+				'Missing required fields: ' + { studentId, tutorId, className },
+			)
 			return { status: 400, error: 'Missing required fields' }
 		}
+
+		let studentUser = null
+		let tutorUser = null
 
 		// Validate student exists
 		const student = await db
 			.select()
 			.from(Student)
 			.where(eq(Student.studentId, studentId))
-		console.log('Found student:', student)
 		if (!student || student.length === 0) {
+			return { status: 400, error: 'Invalid student ID' }
+		}
+		studentUser = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, student[0].userId))
+		if (!studentUser || studentUser.length === 0) {
 			return { status: 400, error: 'Invalid student ID' }
 		}
 
@@ -344,8 +340,14 @@ export const addNewClass = async ({
 			.select()
 			.from(Tutor)
 			.where(eq(Tutor.tutorId, tutorId))
-		console.log('Found tutor:', tutor)
 		if (!tutor || tutor.length === 0) {
+			return { status: 400, error: 'Invalid tutor ID' }
+		}
+		tutorUser = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, tutor[0].userId))
+		if (!tutorUser || tutorUser.length === 0) {
 			return { status: 400, error: 'Invalid tutor ID' }
 		}
 
@@ -353,7 +355,6 @@ export const addNewClass = async ({
 		if (startDate && endDate) {
 			const start = new Date(startDate)
 			const end = new Date(endDate)
-			console.log('Dates:', { start, end })
 			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
 				return { status: 400, error: 'Invalid date format' }
 			}
@@ -364,7 +365,6 @@ export const addNewClass = async ({
 
 		// Validate schedule if provided
 		if (schedule) {
-			console.log('Schedule:', schedule)
 			if (!Array.isArray(schedule.days) || !Array.isArray(schedule.times)) {
 				return { status: 400, error: 'Invalid schedule format' }
 			}
@@ -380,7 +380,6 @@ export const addNewClass = async ({
 			schedule: schedule || null,
 			meetingLink: meetingLink || null,
 		}
-		console.log('Inserting values:', values)
 
 		try {
 			const newRow = await db
@@ -389,13 +388,24 @@ export const addNewClass = async ({
 				.onConflictDoNothing()
 				.returning()
 
-			console.log('Insert result:', newRow)
-
 			if (!newRow || newRow.length === 0) {
 				return { status: 500, error: 'Failed to create class' }
 			}
 
 			Log('new class added')
+			await sendMail({
+				recipient: studentUser[0].email,
+				content: `<p>You have been successfully added to this class: ${className}</p>`,
+				subject: 'Class creation notice',
+				success: true,
+			})
+
+			await sendMail({
+				recipient: tutorUser[0].email,
+				content: `<p>You have been successfully added to this class: ${className}</p>`,
+				subject: 'Class creation notice',
+				success: true,
+			})
 			return { status: 200, item: newRow[0] }
 		} catch (dbError) {
 			console.error('Database error:', dbError)
@@ -412,11 +422,9 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 	try {
 		if (!classId || !newStudentId || !newTutorId)
 			return { status: 400, item: { error: 'Missing required fields' } }
-		console.log('Reallocation request:', {
-			classId,
-			newStudentId,
-			newTutorId,
-		})
+
+		let studentUser = null
+		let tutorUser = null
 
 		// Validate that the class exists
 		const existingClass = await db
@@ -442,6 +450,16 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 				return { status: 404, item: { error: 'Student not found' } }
 			}
 			updateObj.studentId = newStudentId
+
+			studentUser = await db
+				.select()
+				.from(User)
+				.where(eq(User.userId, student[0].userId))
+				.execute()
+
+			if (!studentUser || studentUser.length === 0) {
+				return { status: 404, item: { error: 'Student not found' } }
+			}
 		}
 
 		if (newTutorId) {
@@ -456,6 +474,16 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 				return { status: 404, item: { error: 'Tutor not found' } }
 
 			updateObj.tutorId = newTutorId
+
+			tutorUser = await db
+				.select()
+				.from(User)
+				.where(eq(User.userId, tutor[0].userId))
+				.execute()
+
+			if (!tutorUser || tutorUser.length === 0) {
+				return { status: 404, item: { error: 'Tutor not found' } }
+			}
 		}
 
 		// If no updates are provided
@@ -468,9 +496,29 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			.update(Class)
 			.set(updateObj)
 			.where(eq(Class.id, classId))
-			.execute()
+			.returning()
 
-		console.log('Update result:', result)
+		if (!result || result.length === 0) {
+			logError('update class', 'Failed to update class')
+			return { status: 500, item: { error: 'Failed to update class' } }
+		}
+
+		const emailContent = `
+			<p>You have been successfully reallocated to this class: ${result[0].className}</p>
+		`
+
+		await sendMail({
+			recipient: studentUser[0].email,
+			content: emailContent,
+			subject: 'Class reallocation notice',
+			success: true,
+		})
+		await sendMail({
+			recipient: tutorUser[0].email,
+			content: emailContent,
+			subject: 'Class reallocation notice',
+			success: true,
+		})
 		return {
 			status: 200,
 			item: {

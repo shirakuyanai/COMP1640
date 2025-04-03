@@ -27,7 +27,7 @@ export const sendMail = async ({ recipient, content, subject, success }) => {
 			from: process.env.GMAIL_USER,
 			to: recipient,
 			subject,
-			content,
+			html: content,
 		}
 
 		const results = new Promise(async (resolve, reject) => {

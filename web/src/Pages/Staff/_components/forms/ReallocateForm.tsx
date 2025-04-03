@@ -56,14 +56,12 @@ function ReallocateForm() {
 				])
 
 				if (classesData) {
-					console.log('Classes data:', classesData)
 					setClasses(classesData)
 				} else {
 					setError('Failed to fetch classes')
 				}
 
 				if (studentsAndTutorsData) {
-					console.log('Students and tutors data:', studentsAndTutorsData)
 					setStudentsAndTutors(studentsAndTutorsData)
 				} else {
 					setError('Failed to fetch students and tutors')
@@ -84,7 +82,6 @@ function ReallocateForm() {
 	// Update selected class when classId changes
 	const onClassChange = (classId: string) => {
 		const selected = classes.find((c: any) => c.id === classId)
-		console.log('Selected class:', selected)
 		setSelectedClass(selected)
 		form.setValue('classId', classId)
 	}
@@ -92,7 +89,6 @@ function ReallocateForm() {
 	const onSubmit = async (values: z.infer<typeof reallocateSchema>) => {
 		try {
 			setError('')
-			console.log('Form values:', values)
 			const result = await reallocateClass(authToken, values)
 
 			if (result.success) {
