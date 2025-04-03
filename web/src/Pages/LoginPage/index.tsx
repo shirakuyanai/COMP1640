@@ -6,19 +6,20 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'
 
 function LoginPage() {
-	const { currentUser } = useGlobalState()
+	const { isLoading, currentUser } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		if (currentUser) {
+		if (!isLoading && currentUser) {
 			if (currentUser.role === 'staff') {
 				navigate('/staff')
 			} else {
 				navigate('/')
 			}
 		}
-	}, [currentUser])
+	}, [isLoading, currentUser])
 
+	if (isLoading) return <div>Loading...</div>
 	return (
 		<div className='flex justify-center items-center h-screen bg-purple-50'>
 			<Card>

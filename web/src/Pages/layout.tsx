@@ -5,52 +5,20 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'
 
 function Layout() {
-	const { currentUser, authToken, setCurrentUser } = useGlobalState()
+	const { currentUser, isLoading } = useGlobalState()
 	const navigate = useNavigate()
-	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
-		const checkAuth = async () => {
-			if (!authToken) {
-				setIsLoading(false)
+		if (!isLoading) {
+			if (!currentUser) {
 				navigate('/login')
-				return
-			}
-
-			try {
-				const user = await getCurrentUser(authToken)
-				if (!user) {
-					setIsLoading(false)
-					navigate('/login')
-					return
-				}
-				
-				setCurrentUser(user)
-				
-				if (user.role === 'staff') {
-					setIsLoading(false)
-					navigate('/staff')
-					return
-				}
-				
-				setIsLoading(false)
-			} catch (error) {
-				console.error('Auth check failed:', error)
-				setIsLoading(false)
-				navigate('/login')
+			} else {
+				if (currentUser.role === 'staff') navigate('/staff')
 			}
 		}
+	}, [isLoading, currentUser])
 
-		checkAuth()
-	}, [authToken, navigate, setCurrentUser])
-
-	if (isLoading) {
-		return <div>Loading...</div>
-	}
-
-	if (!currentUser || currentUser.role === 'staff') {
-		return null
-	}
+	if (isLoading) return <div>Loading...</div>
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>

@@ -70,9 +70,11 @@ export const getConversation = async ({
 export const getMessages = async ({
 	token,
 	conversationId,
+	offsset,
 }: {
 	token: string
 	conversationId?: string | null
+	offset: number
 }) => {
 	const url = `${import.meta.env.VITE_HOST}/getMessages`
 
@@ -83,7 +85,7 @@ export const getMessages = async ({
 			Authentication: `Bearer ${token}`,
 			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
 		},
-		body: JSON.stringify({ conversationId }),
+		body: JSON.stringify({ conversationId, offsset }),
 	}
 
 	const response = await fetch(url, options)

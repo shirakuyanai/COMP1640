@@ -207,7 +207,10 @@ connectToDatabase().then(() => {
 		authenticateApp,
 		authenticateToken,
 		async (req, res) => {
-			const response = await getMessagesOfConversation(req.body)
+			const response = await getMessagesOfConversation({
+				conversationId: req.body.conversationId,
+				offset: req.body.offset ?? 0,
+			})
 			res.status(response.status).json(response.item)
 		},
 	)

@@ -25,6 +25,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 	const [conversation, setConversation] = useState(null)
 	const [socket, setSocket] = useState<any>(null)
 
+	const [page, setPage] = useState(0)
 	useEffect(() => {
 		if (currentUser) {
 			initializeSocket(currentUser.username)
@@ -52,9 +53,11 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 			const found_messages = await getMessages({
 				token: authToken,
 				conversationId: found_conversation.id,
+				offset: 0,
 			})
 
-			if (found_messages) setMessages(found_messages)
+			if (found_messages)
+				setMessages((prevMessages) => [...prevMessages, ...found_messages])
 		} else {
 			navigate('/')
 		}
@@ -75,7 +78,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 
 	useEffect(() => {
 		if (currentUser) getData()
-	}, [currentUser])
+	}, [])
 
 	const [message, setMessage] = useState('')
 
@@ -139,7 +142,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 								<div className='text-center text-gray-500'>No messages yet</div>
 							)}
 							{messages.length > 0 &&
-								messages.map(
+								[...messages].reverse().map(
 									(message, i) =>
 										(message.senderId === currentUser.id && (
 											<div

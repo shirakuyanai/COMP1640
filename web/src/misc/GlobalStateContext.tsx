@@ -13,6 +13,8 @@ interface GlobalState {
 	setAuthToken: any
 	currentUser: any
 	setCurrentUser: any
+	isLoading: boolean
+	setIsLoading: any
 }
 
 // Create a context with a default value
@@ -24,19 +26,27 @@ export const GlobalStateProvider = ({ children }: { children: ReactNode }) => {
 		localStorage.getItem('auth_token') ?? '',
 	)
 	const [currentUser, setCurrentUser] = useState<any>(null)
+	const [isLoading, setIsLoading] = useState(true)
 
 	const getUser = async () => {
-		const user = await getCurrentUser(authToken)
-		setCurrentUser(user)
+		try {
+			if (authToken && !currentUser) {
+				setIsLoading(true)
+				const user = await getCurrentUser(authToken)
+				setCurrentUser(user)
+			}
+		} catch (error) {
+			console.error('Error fetching user:', error)
+		} finally {
+			setIsLoading(false)
+		}
 	}
 
 	useEffect(() => {
-		// localStorage.setItem('auth_token', '')
-		// setAuthToken('')
-		if (authToken) {
+		if (authToken && !currentUser) {
 			getUser()
 		}
-	}, [authToken])
+	}, [authToken, currentUser])
 
 	return (
 		<GlobalStateContext.Provider
@@ -45,6 +55,8 @@ export const GlobalStateProvider = ({ children }: { children: ReactNode }) => {
 				setAuthToken,
 				currentUser,
 				setCurrentUser,
+				isLoading,
+				setIsLoading,
 			}}
 		>
 			{children}

@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../config/db_config.js'
 import Class from '../schema/Class.js'
 import Tutor from '../schema/Tutor.js'
@@ -8,12 +8,15 @@ import User from '../schema/User.js'
 import Conversation from '../schema/Conversation.js'
 import { Log, logError } from '../lib/logger.js'
 
-export const getMessagesOfConversation = async ({ conversationId }) => {
+export const getMessagesOfConversation = async ({
+	conversationId,
+	offset = 0,
+}) => {
 	if (!conversationId) {
 		logError('get messages', 'no conversation id provided')
 		return { status: 401, item: 'no conversation id provided' }
 	}
-	const messages = await getMessages(conversationId)
+	const messages = await getMessages({ conversationId, offset })
 	if (messages.status === 200) Log('messages found')
 	return { status: 200, item: messages.item }
 }
@@ -125,13 +128,15 @@ export const createConversation = async (classId) => {
 	}
 }
 
-const getMessages = async (conversationId) => {
+const getMessages = async ({ conversationId, offset }) => {
 	try {
 		const messages = await db
 			.select()
 			.from(Message)
 			.where(eq(Message.conversationId, conversationId))
-			.orderBy(Message.sendDate)
+			.orderBy(desc(Message.sendDate)) // fetch the latest messages first
+			.offset(offset)
+			.limit(20)
 
 		if (!messages || messages.length === 0) {
 			Log('no messages found')

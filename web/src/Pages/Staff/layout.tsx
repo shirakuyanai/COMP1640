@@ -5,52 +5,21 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'
 
 function StaffLayout() {
-	const { currentUser, authToken, setCurrentUser } = useGlobalState()
+	const { currentUser, isLoading, setIsLoading } = useGlobalState()
+	setIsLoading(true)
 	const navigate = useNavigate()
-	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
-		const checkAuth = async () => {
-			if (!authToken) {
-				setIsLoading(false)
+		if (!isLoading) {
+			if (!currentUser) {
 				navigate('/login')
-				return
-			}
-
-			try {
-				const user = await getCurrentUser(authToken)
-				if (!user) {
-					setIsLoading(false)
-					navigate('/login')
-					return
-				}
-
-				setCurrentUser(user)
-
-				if (user.role !== 'staff') {
-					setIsLoading(false)
-					navigate('/')
-					return
-				}
-
-				setIsLoading(false)
-			} catch (error) {
-				console.error('Auth check failed:', error)
-				setIsLoading(false)
-				navigate('/login')
+			} else {
+				if (currentUser.role !== 'staff') navigate('/')
 			}
 		}
+	}, [isLoading, currentUser])
 
-		checkAuth()
-	}, [authToken, navigate, setCurrentUser])
-
-	if (isLoading) {
-		return <div>Loading...</div>
-	}
-
-	if (!currentUser || currentUser.role !== 'staff') {
-		return null
-	}
+	if (isLoading) return <div>Loading...</div>
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>
