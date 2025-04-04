@@ -9,129 +9,237 @@ import {
 import { Button } from '@/Components/ui/button'
 import RequiredLabelIcon from '@/Components/RequiredLabelIcon'
 import { useForm } from 'react-hook-form'
+import { useGlobalState } from '@/misc/GlobalStateContext'
+import { useState, useEffect } from 'react'
+import { getAllClasses, getDataForCreatingClass } from '@/actions/getData'
+import { reallocateClass } from '@/actions/postData'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
-const students = [
-	{ id: '1', name: 'Alice Johnson' },
-	{ id: '2', name: 'Bob Smith' },
-	{ id: '3', name: 'Charlie Brown' },
-]
+// Schema for the reallocation form
+const reallocateSchema = z.object({
+	classId: z.string().min(1, 'Required'),
+	newStudentId: z.string().optional(),
+	newTutorId: z.string().optional(),
+})
 
-const classes = [
-	{ id: '101', name: 'Math ' },
-	{ id: '102', name: 'Physic' },
-	{ id: '103', name: 'English' },
-]
-
-// Form structure
 function ReallocateStudentForm() {
-	const form = useForm({
+	const { authToken } = useGlobalState()
+	const [classes, setClasses] = useState([])
+	const [selectedClass, setSelectedClass] = useState(null)
+	const [studentsAndTutors, setStudentsAndTutors] = useState({
+		students: [],
+		tutors: [],
+	})
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState('')
+
+	const form = useForm<z.infer<typeof reallocateSchema>>({
+		resolver: zodResolver(reallocateSchema),
 		defaultValues: {
-			studentId: '',
-			oldClassId: '',
-			newClassId: '',
+			classId: '',
+			newStudentId: '',
+			newTutorId: '',
 		},
 	})
 
-	const onSubmit = (values: any) => {
-		alert(`Student ${values.studentId} moved from ${values.oldClassId} to ${values.newClassId}`)
+	// Fetch classes and students/tutors data
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+				setIsLoading(true)
+				setError('')
+
+				const [classesData, studentsAndTutorsData] = await Promise.all([
+					getAllClasses(authToken),
+					getDataForCreatingClass(authToken)
+				])
+
+				if (classesData) {
+					console.log('Classes data:', classesData)
+					setClasses(classesData)
+				} else {
+					setError('Failed to fetch classes')
+				}
+
+				if (studentsAndTutorsData) {
+					console.log('Students and tutors data:', studentsAndTutorsData)
+					setStudentsAndTutors(studentsAndTutorsData)
+				} else {
+					setError('Failed to fetch students and tutors')
+				}
+			} catch (err) {
+				console.error('Error fetching data:', err)
+				setError('Failed to load data')
+			} finally {
+				setIsLoading(false)
+			}
+		}
+
+		if (authToken) {
+			fetchData()
+		}
+	}, [authToken])
+
+	// Update selected class when classId changes
+	const onClassChange = (classId: string) => {
+		const selected = classes.find((c: any) => c.id === classId)
+		console.log('Selected class:', selected)
+		setSelectedClass(selected)
+		form.setValue('classId', classId)
+	}
+
+	const onSubmit = async (values: z.infer<typeof reallocateSchema>) => {
+		try {
+			setError('')
+			console.log('Form values:', values)
+			const result = await reallocateClass(authToken, values)
+			
+			if (result.success) {
+				alert('Class reallocated successfully')
+				// Reset form
+				form.reset()
+				setSelectedClass(null)
+			} else {
+				setError(result.error || 'Failed to reallocate class')
+			}
+		} catch (error) {
+			console.error('Error in form submission:', error)
+			setError(error instanceof Error ? error.message : 'Failed to reallocate class')
+		}
+	}
+
+	if (isLoading) {
+		return <div>Loading...</div>
+	}
+
+	if (error) {
+		return <div className="text-red-500">{error}</div>
 	}
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-6 bg-white p-6 rounded-lg shadow-lg w-full max-w-lg mx-auto'>
-				<h2 className='text-2xl font-semibold text-center'>Reallocate Student</h2>
+			<form
+				onSubmit={form.handleSubmit(onSubmit)}
+				className='flex gap-6 flex-col'
+			>
+				<div className='flex gap-6 flex-col'>
+					{/* Class Selection */}
+					<FormField
+						control={form.control}
+						name='classId'
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Select Class</FormLabel>
+								<FormControl>
+									<select
+										className='border p-4 rounded-md w-full'
+										value={field.value}
+										onChange={(e) => onClassChange(e.target.value)}
+									>
+										<option value=''>Select a class</option>
+										{classes.map((classItem: any) => (
+											<option
+												key={classItem.id}
+												value={classItem.id}
+											>
+												{classItem.className}
+											</option>
+										))}
+									</select>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				{/* Select Student */}
-				<FormField
-					control={form.control}
-					name='studentId'
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>
-								Select Student <RequiredLabelIcon />
-							</FormLabel>
-							<FormControl>
-								<select
-									className='border p-3 rounded-md w-full'
-									value={field.value}
-									onChange={(e) => field.onChange(e.target.value)}
-								>
-									<option value=''>Select a student</option>
-									{students.map((student) => (
-										<option key={student.id} value={student.id}>
-											{student.name}
-										</option>
-									))}
-								</select>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
+					{/* Show current class details if a class is selected */}
+					{selectedClass && (
+						<div className="bg-gray-50 p-4 rounded-md">
+							<h3 className="font-semibold mb-2">Current Class Details</h3>
+							<p>Class Name: {selectedClass.className}</p>
+							<p>Current Student: {selectedClass.studentUsername}</p>
+							<p>Current Tutor: {selectedClass.tutorUsername}</p>
+							{selectedClass.startDate && (
+								<p>Start Date: {new Date(selectedClass.startDate).toLocaleDateString()}</p>
+							)}
+							{selectedClass.endDate && (
+								<p>End Date: {new Date(selectedClass.endDate).toLocaleDateString()}</p>
+							)}
+						</div>
 					)}
-				/>
 
-				{/* Select Old Class */}
-				<FormField
-					control={form.control}
-					name='oldClassId'
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>
-								Current Class <RequiredLabelIcon />
-							</FormLabel>
-							<FormControl>
-								<select
-									className='border p-3 rounded-md w-full'
-									value={field.value}
-									onChange={(e) => field.onChange(e.target.value)}
-								>
-									<option value=''>Select current class</option>
-									{classes.map((cls) => (
-										<option key={cls.id} value={cls.id}>
-											{cls.name}
-										</option>
-									))}
-								</select>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+					{/* New Student Selection */}
+					<FormField
+						control={form.control}
+						name='newStudentId'
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>New Student (Optional)</FormLabel>
+								<FormControl>
+									<select
+										className='border p-4 rounded-md w-full'
+										value={field.value ?? ''}
+										onChange={(e) => field.onChange(e.target.value)}
+									>
+										<option value=''>Select new student</option>
+										{studentsAndTutors.students.map((student: any) => (
+											<option
+												key={student.studentId}
+												value={student.studentId}
+											>
+												{student.username}
+											</option>
+										))}
+									</select>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				{/* Select New Class */}
-				<FormField
-					control={form.control}
-					name='newClassId'
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>
-								New Class <RequiredLabelIcon />
-							</FormLabel>
-							<FormControl>
-								<select
-									className='border p-3 rounded-md w-full'
-									value={field.value}
-									onChange={(e) => field.onChange(e.target.value)}
-								>
-									<option value=''>Select new class</option>
-									{classes.map((cls) => (
-										<option key={cls.id} value={cls.id}>
-											{cls.name}
-										</option>
-									))}
-								</select>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+					{/* New Tutor Selection */}
+					<FormField
+						control={form.control}
+						name='newTutorId'
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>New Tutor (Optional)</FormLabel>
+								<FormControl>
+									<select
+										className='border p-4 rounded-md w-full'
+										value={field.value ?? ''}
+										onChange={(e) => field.onChange(e.target.value)}
+									>
+										<option value=''>Select new tutor</option>
+										{studentsAndTutors.tutors.map((tutor: any) => (
+											<option
+												key={tutor.tutorId}
+												value={tutor.tutorId}
+											>
+												{tutor.username}
+											</option>
+										))}
+									</select>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
 
-				{/* Submit Button */}
-				<Button
-					type='submit'
-					className='bg-gradient-to-r from-purple-500 to-blue-700 text-white font-semibold py-3 rounded-md hover:opacity-90 transition-all'
-				>
-					Reallocate Student
-				</Button>
+				{error && (
+					<div className="text-red-500">{error}</div>
+				)}
+
+				<div className='self-end'>
+					<Button
+						className='bg-gradient-to-r from-purple-500 to-blue-700 cursor-pointer'
+						disabled={form.formState.isSubmitting}
+					>
+						{form.formState.isSubmitting ? 'Reallocating...' : 'Reallocate'}
+					</Button>
+				</div>
 			</form>
 		</Form>
 	)

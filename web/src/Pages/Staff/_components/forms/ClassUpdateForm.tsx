@@ -5,7 +5,6 @@ import { z } from 'zod'
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -54,11 +53,9 @@ function ClassUpdateForm({
 			className: '',
 			studentId: '',
 			tutorId: '',
-			description: '',
 			startDate: '',
 			endDate: '',
-			schedule: { days: [], times: [] },
-			meetingLink: ''
+			schedule: { days: [], times: [] }
 		},
 	})
 
@@ -143,24 +140,6 @@ function ClassUpdateForm({
 									<Input
 										{...field}
 										className='h-12'
-										disabled={isLocked}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name='description'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Description</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										className='h-12'
-										placeholder='Enter class description'
 										disabled={isLocked}
 									/>
 								</FormControl>
@@ -259,24 +238,6 @@ function ClassUpdateForm({
 							/>
 						</div>
 					</div>
-					<FormField
-						control={form.control}
-						name='meetingLink'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Meeting Link</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										className='h-12'
-										placeholder='https://meet.google.com/...'
-										disabled={isLocked}
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
 					<FormField
 						control={form.control}
 						name='studentId'

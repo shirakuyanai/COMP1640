@@ -200,13 +200,21 @@ export const getAllClasses = async (token: string) => {
 
 		console.log('Fetching classes with options:', options)
 		const response = await fetch(url, options)
-		const data = await response.json()
-		console.log('Classes response:', data)
-
+		
 		if (!response.ok) {
-			console.error('Failed to fetch classes:', data)
+			console.error('Failed to fetch classes:', response.status)
 			return []
 		}
+
+		let data
+		try {
+			data = await response.json()
+		} catch (error) {
+			console.error('Failed to parse response as JSON:', error)
+			return []
+		}
+
+		console.log('Classes response:', data)
 
 		// If data is an error object, return empty array
 		if (data && data.error) {
@@ -220,7 +228,8 @@ export const getAllClasses = async (token: string) => {
 			return []
 		}
 
-		return data
+		// Return the array of classes
+		return Array.isArray(data) ? data : []
 	} catch (error) {
 		console.error('Error fetching classes:', error)
 		return []

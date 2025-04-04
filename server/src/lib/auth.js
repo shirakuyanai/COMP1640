@@ -251,8 +251,12 @@ export const authenticateToken = async (req, res, next) => {
 
 		if (userFromPayload && userFromPayload.status !== 200)
 			return res.status(userFromPayload.status).json(userFromPayload.item)
-		req.user = response.item
-		Log(`Token authenticated successfully. User ID: ${userFromPayload.item.id}`)
+		
+		req.user = {
+			...response.item,
+			userId: response.item.id  // Map id to userId for consistency
+		}
+		Log(`Token authenticated successfully. User ID: ${response.item.id}`)
 		next()
 	} catch (err) {
 		return res.status(500).json(logError('authenticate token', err))

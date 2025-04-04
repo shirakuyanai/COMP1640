@@ -13,6 +13,7 @@ import { FiDownload } from 'react-icons/fi'
 import MeetingPage from '@/Pages/Staff/Class/MeetingPage'
 import { getClassById } from '@/actions/getData'
 import { useGlobalState } from '@/misc/GlobalStateContext'
+import PostPage from './Post'
 
 function ClassPage() {
 	const [searchParams] = useSearchParams()
@@ -46,10 +47,10 @@ function ClassPage() {
 						<Button variant='outline'>Join Meet</Button>
 					</div>
 					<div className='flex flex-row gap-2 items-center'>
-						<FaFileLines className='text-gray-200' />
+						<CiChat1 className='text-gray-200' />
 						<div className='flex flex-col'>
-							<h4 className='text-sm text-gray-200 font-light'>Assignments</h4>
-							<h4 className='text-sm text-gray-200 font-semibold'>12 total</h4>
+							<h4 className='text-sm text-gray-200 font-light'>Posts</h4>
+							<h4 className='text-sm text-gray-200 font-semibold'>Discussion Board</h4>
 						</div>
 					</div>
 				</div>
@@ -58,7 +59,7 @@ function ClassPage() {
 						<TabsList className='bg-gray-100'>
 							<TabsTrigger value='overview'>Overview</TabsTrigger>
 							<TabsTrigger value='content'>Content</TabsTrigger>
-							<TabsTrigger value='assignment'>Assignment</TabsTrigger>
+							<TabsTrigger value='post'>Posts</TabsTrigger>
 							<TabsTrigger value='message'>Message</TabsTrigger>
 							<TabsTrigger value='meetings'>Meetings</TabsTrigger>
 						</TabsList>
@@ -68,8 +69,8 @@ function ClassPage() {
 						<TabsContent value='content'>
 							<ContentPage />
 						</TabsContent>
-						<TabsContent value='assignment'>
-							<div>Assignment</div>
+						<TabsContent value='post'>
+							<PostPage />
 						</TabsContent>
 						<TabsContent value='message'>
 							<MessagePage found_class={found_class} />

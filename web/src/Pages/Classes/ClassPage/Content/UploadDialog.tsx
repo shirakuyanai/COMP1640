@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -6,55 +6,78 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/Components/ui/dialog"
 import { Button } from '@/Components/ui/button'
 import { Input } from '@/Components/ui/input'
 import { Label } from '@/Components/ui/label'
 import { Textarea } from '@/Components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/Components/ui/select"
 
 interface UploadDialogProps {
   isOpen: boolean
   onClose: () => void
   onUpload: (data: ContentUploadData) => void
+  editingContent?: ContentItem | null
 }
 
 export interface ContentUploadData {
   title: string
-  type: string
   description: string
-  file?: File
-  link?: string
+  file: File
 }
 
-const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onUpload }) => {
+export interface ContentItem {
+  id: string
+  title: string
+  type: string
+  duration?: string
+  icon: any
+  description: string
+  date: string
+  link?: string
+  fileUrl?: string
+  fileName: string
+  ownerId: string
+  uploadedBy: {
+    username: string
+    role: string
+  }
+}
+
+const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onUpload, editingContent }) => {
   const [formData, setFormData] = useState<ContentUploadData>({
     title: '',
-    type: '',
     description: '',
+    file: null as any
   })
-  const [file, setFile] = useState<File | null>(null)
+
+  useEffect(() => {
+    if (editingContent) {
+      setFormData({
+        title: editingContent.title,
+        description: editingContent.description,
+        file: null as any
+      })
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        file: null as any
+      })
+    }
+  }, [editingContent])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onUpload({
-      ...formData,
-      file: file || undefined,
-    })
+    if (!formData.file && !editingContent) {
+      return
+    }
+    onUpload(formData)
     // Reset form
     setFormData({
       title: '',
-      type: '',
       description: '',
+      file: null as any
     })
-    setFile(null)
     onClose()
   }
 
@@ -63,9 +86,9 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onUpload }
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Upload Content</DialogTitle>
+            <DialogTitle>{editingContent ? 'Edit Content' : 'Upload Content'}</DialogTitle>
             <DialogDescription>
-              Add new learning materials or questions to your class.
+              {editingContent ? 'Update the content details' : 'Add a title and description for your content'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -75,6 +98,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onUpload }
               </Label>
               <Input
                 id="title"
+                placeholder="Enter a title for your content"
                 className="col-span-3"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -82,72 +106,36 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ isOpen, onClose, onUpload }
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                Type
-              </Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-                required
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select content type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Document">Document</SelectItem>
-                  <SelectItem value="Video">Video</SelectItem>
-                  <SelectItem value="Link">Link</SelectItem>
-                  <SelectItem value="Question">Question</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Description
               </Label>
               <Textarea
                 id="description"
+                placeholder="Describe what this content is about"
                 className="col-span-3"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
               />
             </div>
-            {formData.type !== 'Link' ? (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="file" className="text-right">
-                  File
-                </Label>
-                <Input
-                  id="file"
-                  type="file"
-                  className="col-span-3"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  required={formData.type !== 'Link'}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="link" className="text-right">
-                  Link
-                </Label>
-                <Input
-                  id="link"
-                  type="url"
-                  className="col-span-3"
-                  value={formData.link || ''}
-                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  required={formData.type === 'Link'}
-                  placeholder="https://"
-                />
-              </div>
-            )}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="file" className="text-right">
+                File
+              </Label>
+              <Input
+                id="file"
+                type="file"
+                className="col-span-3"
+                onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] as File })}
+                required={!editingContent}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Upload</Button>
+            <Button type="submit">{editingContent ? 'Update' : 'Upload'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

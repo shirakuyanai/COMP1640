@@ -39,77 +39,70 @@ export async function getAllClasses() {
 				className: Class.className,
 				studentId: Class.studentId,
 				tutorId: Class.tutorId,
-				description: Class.description,
 				startDate: Class.startDate,
 				endDate: Class.endDate,
 				schedule: Class.schedule,
-				meetingLink: Class.meetingLink,
 			})
 			.from(Class)
 			.execute()
 
-		console.log('Retrieved classes:', classes)
+		console.log('Found classes:', classes)
 
-		if (!classes) {
-			console.error('No classes found')
-			return {
-				status: 200,
-				item: []
-			}
+		if (!classes || classes.length === 0) {
+			console.log('No classes found')
+			return { status: 200, item: [] }
 		}
 
-		// Get student and tutor details for each class
-		const classesWithDetails = await Promise.all(
-			classes.map(async (classItem) => {
-				try {
-					// Get student details with username from User table
-					const student = await db
-						.select({
-							username: User.username,
-						})
-						.from(Student)
-						.innerJoin(User, eq(Student.userId, User.userId))
-						.where(eq(Student.studentId, classItem.studentId))
-						.execute()
+		// Get all unique student and tutor IDs from the classes
+		const studentIds = [...new Set(classes.map(c => c.studentId))]
+		const tutorIds = [...new Set(classes.map(c => c.tutorId))]
 
-					// Get tutor details with username from User table
-					const tutor = await db
-						.select({
-							username: User.username,
-						})
-						.from(Tutor)
-						.innerJoin(User, eq(Tutor.userId, User.userId))
-						.where(eq(Tutor.tutorId, classItem.tutorId))
-						.execute()
+		let students = []
+		let tutors = []
 
-					return {
-						...classItem,
-						studentUsername: student[0]?.username || 'Unknown',
-						tutorUsername: tutor[0]?.username || 'Unknown',
-					}
-				} catch (error) {
-					console.error('Error getting details for class:', classItem.id, error)
-					return {
-						...classItem,
-						studentUsername: 'Unknown',
-						tutorUsername: 'Unknown',
-					}
-				}
-			})
+		// Only fetch if we have IDs to fetch
+		if (studentIds.length > 0) {
+			students = await db
+				.select({
+					studentId: Student.studentId,
+					username: User.username,
+				})
+				.from(Student)
+				.innerJoin(User, eq(Student.userId, User.userId))
+				.where(inArray(Student.studentId, studentIds))
+		}
+
+		if (tutorIds.length > 0) {
+			tutors = await db
+				.select({
+					tutorId: Tutor.tutorId,
+					username: User.username,
+				})
+				.from(Tutor)
+				.innerJoin(User, eq(Tutor.userId, User.userId))
+				.where(inArray(Tutor.tutorId, tutorIds))
+		}
+
+		// Create lookup maps
+		const studentMap = Object.fromEntries(
+			students.map(s => [s.studentId, s.username])
+		)
+		const tutorMap = Object.fromEntries(
+			tutors.map(t => [t.tutorId, t.username])
 		)
 
-		console.log('Classes with details:', classesWithDetails)
+		// Map the classes with usernames
+		const classesWithUsernames = classes.map(classItem => ({
+			...classItem,
+			studentUsername: studentMap[classItem.studentId] || 'Unknown Student',
+			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
+		}))
 
-		return {
-			status: 200,
-			item: classesWithDetails || [],
-		}
+		return { status: 200, item: classesWithUsernames }
 	} catch (error) {
 		console.error('Error in getAllClasses:', error)
-		return {
-			status: 500,
-			item: { error: error.message || 'Failed to fetch classes' },
-		}
+		logError('get all classes', error)
+		return { status: 500, error: `Server error: ${error.message}` }
 	}
 }
 
