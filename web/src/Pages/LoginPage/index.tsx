@@ -6,20 +6,26 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'
 
 function LoginPage() {
-	const { isLoading, currentUser, authToken } = useGlobalState()
+	const { isLoading, currentUser, authToken, setIsLoading } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		if (!isLoading && currentUser && authToken) {
-			if (currentUser.role === 'staff') {
-				navigate('/staff')
-			} else {
-				navigate('/')
+		try {
+			if (!isLoading && currentUser && authToken) {
+				if (currentUser.role === 'staff') {
+					navigate('/staff')
+				} else {
+					navigate('/')
+				}
 			}
+		} catch (err) {
+			console.error('Error navigating:', err)
+		} finally {
+			setIsLoading(false)
 		}
 	}, [isLoading, currentUser, authToken])
 
-	if (isLoading) return <div>Loading...</div>
+	if (isLoading) return <div>{JSON.stringify(isLoading)}</div>
 	return (
 		<div className='flex justify-center items-center h-screen bg-purple-50'>
 			<Card>

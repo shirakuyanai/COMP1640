@@ -5,16 +5,22 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'
 
 function Layout() {
-	const { currentUser, isLoading, authToken } = useGlobalState()
+	const { currentUser, isLoading, authToken, setIsLoading } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		if (!isLoading) {
-			if (!currentUser || !authToken) {
-				navigate('/login')
-			} else {
-				if (currentUser.role === 'staff') navigate('/staff')
+		try {
+			if (!isLoading) {
+				if (!currentUser || !authToken) {
+					navigate('/login')
+				} else {
+					if (currentUser.role === 'staff') navigate('/staff')
+				}
 			}
+		} catch (err) {
+			console.error('Error navigating:', err)
+		} finally {
+			setIsLoading(false)
 		}
 	}, [isLoading, currentUser])
 

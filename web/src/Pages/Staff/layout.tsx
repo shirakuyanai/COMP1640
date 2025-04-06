@@ -9,12 +9,18 @@ function StaffLayout() {
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		if (!isLoading) {
-			if (!currentUser || !authToken) {
-				navigate('/login')
-			} else {
-				if (currentUser.role !== 'staff') navigate('/')
+		try {
+			if (!isLoading) {
+				if (!currentUser || !authToken) {
+					navigate('/login')
+				} else {
+					if (currentUser.role !== 'staff') navigate('/')
+				}
 			}
+		} catch (err) {
+			console.error('Error navigating:', err)
+		} finally {
+			setIsLoading(false)
 		}
 	}, [isLoading, currentUser, authToken])
 
