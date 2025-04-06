@@ -37,6 +37,7 @@ import {
 	authenticateToken,
 	hashPassword,
 	Login,
+	studentsNotAllowed,
 } from './lib/auth.js'
 
 import {
@@ -174,7 +175,7 @@ connectToDatabase()
 					classId: req.body.classId,
 					meetingDate: req.body.meetingDate,
 					meetingType: req.body.meetingType,
-					meetingNote: req.body.meetingNote,
+					meetingNotes: req.body.meetingNotes,
 					meetingLink: req.body.meetingLink,
 					location: req.body.location,
 					studentAttended: req.body.studentAttended,
@@ -187,6 +188,7 @@ connectToDatabase()
 			'/changeMeetingAttendance',
 			authenticateApp,
 			authenticateToken,
+			studentsNotAllowed,
 			async (req, res) => {
 				const response = await changeMeetingAttendance({
 					meetings: req.body.meetings,

@@ -26,7 +26,7 @@ function NewMeeting() {
 		classId: id ?? '',
 		meetingDate: '',
 		meetingType: 'in-person',
-		meetingNote: '',
+		meetingNotes: '',
 		meetingLink: '',
 		location: '',
 		studentAttended: 0,
@@ -117,7 +117,7 @@ function NewMeeting() {
 						/>
 						<FormField
 							control={form.control}
-							name='meetingNote'
+							name='meetingNotes'
 							render={({ field }) => (
 								<FormItem className='flex flex-col gap-2'>
 									<FormLabel>Note</FormLabel>
@@ -128,7 +128,7 @@ function NewMeeting() {
 												field.onChange(e.target.value)
 												setMeeting((prevMeeting) => ({
 													...prevMeeting,
-													meetingNote: e.target.value,
+													meetingNotes: e.target.value,
 												}))
 											}}
 										/>

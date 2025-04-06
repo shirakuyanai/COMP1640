@@ -11,41 +11,10 @@ import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router-dom'
 import { z } from 'zod'
 
-interface Meeting {
-	meetingId: string
-	class: string
-	tutorName: string
-	meetingDate: string
-	meetingType: 'in-person' | 'online'
-	meetingNotes?: string
-	meetingLink?: string
-}
-
-const sampleMeetings: Meeting[] = [
-	{
-		meetingId: '1',
-		class: 'COMP1640',
-		tutorName: 'Nguyen Thi A',
-		meetingDate: '2025-03-20 10:00 AM',
-		meetingType: 'online',
-		meetingNotes: 'Discuss progress on project.',
-		meetingLink: 'https://meet.google.com/hwj-mmya-xon',
-	},
-	{
-		meetingId: '2',
-		class: 'COMP1640',
-		tutorName: 'Hehe',
-		meetingDate: '2025-03-21 02:00 PM',
-		meetingType: 'in-person',
-		meetingNotes: 'Review last assignment.',
-		meetingLink: 'https://meet.google.com/hwj-mmya-xon', // Updated Google Meet link
-	},
-]
-
 function MeetingPage() {
 	const [meetings, setMeetings] = useState([])
 	const { id } = useParams()
-	const { authToken } = useGlobalState()
+	const { authToken, currentUser } = useGlobalState()
 
 	const form = useForm<z.infer<typeof meetingAttendanceSchema>>({
 		resolver: zodResolver(meetingAttendanceSchema),
@@ -142,40 +111,54 @@ function MeetingPage() {
 										<td className='p-3'>
 											{(meeting as MeetingType).location || 'N/A'}
 										</td>
-										<td className='p-3'>
-											<Input
-												type='hidden'
-												value={(meeting as MeetingType).meetingId}
-												{...form.register(`meetings.${i}.meetingId`)}
-											/>
-											<FormField
-												control={form.control}
-												name={`meetings.${i}.status`}
-												render={({ field }) => (
-													<select
-														className='border-1 rounded-md p-2'
-														value={field.value ?? 0}
-														onChange={(e) => {
-															field.onChange(Number(e.target.value))
-														}}
-													>
-														<option value={0}>Not yet</option>
-														<option value={1}>Attended</option>
-														<option value={2}>Absent</option>
-													</select>
-												)}
-											/>
+										{currentUser.role === 'tutor' && (
+											<td className='p-3'>
+												<Input
+													type='hidden'
+													value={(meeting as MeetingType).meetingId}
+													{...form.register(`meetings.${i}.meetingId`)}
+												/>
+												<FormField
+													control={form.control}
+													name={`meetings.${i}.status`}
+													render={({ field }) => (
+														<select
+															className='border-1 rounded-md p-2'
+															value={field.value ?? 0}
+															onChange={(e) => {
+																field.onChange(Number(e.target.value))
+															}}
+														>
+															<option value={0}>Not yet</option>
+															<option value={1}>Attended</option>
+															<option value={2}>Absent</option>
+														</select>
+													)}
+												/>
+											</td>
+										)}
+										<td>
+											{currentUser.role === 'student' &&
+												(meetings[i].studentAttended === 0 ? (
+													<p className='text-yellow-500'>Not yet</p>
+												) : meetings[i].studentAttended === 1 ? (
+													<p className='text-green-500'>Attended</p>
+												) : (
+													<p className='text-red-500'>Absent</p>
+												))}
 										</td>
 									</tr>
 								))}
 							</tbody>
 						</table>
-						<Button
-							type='submit'
-							className='w-fit'
-						>
-							Save
-						</Button>
+						{currentUser.role === 'tutor' && (
+							<Button
+								type='submit'
+								className='w-fit'
+							>
+								Save
+							</Button>
+						)}
 					</form>
 				</Form>
 				{meetings.length === 0 && (

@@ -281,6 +281,13 @@ export const staffOnly = (req, res, next) => {
 	next()
 }
 
+export const studentsNotAllowed = (req, res, next) => {
+	if (req.user.role === 'c2140ead-2d68-4be0-a711-9b8b1ceb9d8d') {
+		return res.status(401).json({ message: 'Unauthorized' })
+	}
+	next()
+}
+
 export const staffNotAllowed = (req, res, next) => {
 	if (req.user.role === '9c048d7e-ef25-42fa-a496-23b0292ac96d') {
 		return res.status(401).json({ message: 'Unauthorized' })
