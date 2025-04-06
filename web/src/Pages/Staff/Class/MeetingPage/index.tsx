@@ -67,7 +67,10 @@ function MeetingPage() {
 
 			<div className='bg-white p-6 rounded-lg shadow-md'>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)}>
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className='overflow-x-auto'
+					>
 						<table className='w-full border-collapse'>
 							<thead>
 								<tr className='bg-gray-200'>

@@ -94,7 +94,7 @@ const MeetingsTab = () => {
 const OverviewTab = () => {
 	return (
 		<div className='grid grid-row-2 gap-5'>
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-7'>
+			<div className='grid grid-cols-1 lg:grid-cols-3 gap-7'>
 				<div className='col-span-2'>
 					<Card>
 						<CardHeader>
@@ -136,7 +136,7 @@ const OverviewTab = () => {
 						</CardContent>
 					</Card>
 				</div>
-				<div className='col-span-1'>
+				<div className='col-span-2 lg:col-span-1'>
 					<Card>
 						<CardHeader>
 							<CardTitle>
@@ -174,7 +174,7 @@ const OverviewTab = () => {
 					</Card>
 				</div>
 			</div>
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-7'>
+			<div className='grid grid-cols-1 lg:grid-cols-3 gap-7'>
 				<Card className='col-span-2'>
 					<CardHeader>
 						<CardTitle>
@@ -230,7 +230,7 @@ const OverviewTab = () => {
 						</CardContent>
 					</CardHeader>
 				</Card>
-				<Card className='h-fit py-8'>
+				<Card className='col-span-2 lg:col-span-1'>
 					<CardHeader>
 						<CardTitle>
 							<h1 className='text-xl font-semibold'>Resources</h1>
