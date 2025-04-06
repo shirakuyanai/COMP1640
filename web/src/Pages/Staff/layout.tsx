@@ -5,21 +5,20 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'
 
 function StaffLayout() {
-	const { currentUser, isLoading, setIsLoading } = useGlobalState()
-	setIsLoading(true)
+	const { currentUser, isLoading, setIsLoading, authToken } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
 		if (!isLoading) {
-			if (!currentUser) {
+			if (!currentUser || !authToken) {
 				navigate('/login')
 			} else {
 				if (currentUser.role !== 'staff') navigate('/')
 			}
 		}
-	}, [isLoading, currentUser])
+	}, [isLoading, currentUser, authToken])
 
-	if (isLoading) return <div>Loading...</div>
+	if (isLoading || !authToken) return <div>Loading...</div>
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>

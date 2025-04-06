@@ -6,18 +6,18 @@ import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getCurrentUser } from '@/actions/getData'
 
 function LoginPage() {
-	const { isLoading, currentUser } = useGlobalState()
+	const { isLoading, currentUser, authToken } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		if (!isLoading && currentUser) {
+		if (!isLoading && currentUser && authToken) {
 			if (currentUser.role === 'staff') {
 				navigate('/staff')
 			} else {
 				navigate('/')
 			}
 		}
-	}, [isLoading, currentUser])
+	}, [isLoading, currentUser, authToken])
 
 	if (isLoading) return <div>Loading...</div>
 	return (

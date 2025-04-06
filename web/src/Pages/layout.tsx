@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react'
 import { getCurrentUser } from '@/actions/getData'
 
 function Layout() {
-	const { currentUser, isLoading } = useGlobalState()
+	const { currentUser, isLoading, authToken } = useGlobalState()
 	const navigate = useNavigate()
 
 	useEffect(() => {
 		if (!isLoading) {
-			if (!currentUser) {
+			if (!currentUser || !authToken) {
 				navigate('/login')
 			} else {
 				if (currentUser.role === 'staff') navigate('/staff')
@@ -18,7 +18,7 @@ function Layout() {
 		}
 	}, [isLoading, currentUser])
 
-	if (isLoading) return <div>Loading...</div>
+	if (isLoading || !authToken) return <div>Loading...</div>
 
 	return (
 		<div className='bg-accent/5 min-h-screen'>
