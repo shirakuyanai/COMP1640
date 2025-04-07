@@ -1,0 +1,4 @@
+"roleId"	"roleName"	"description"
+"9c048d7e-ef25-42fa-a496-23b0292ac96d"	"staff"	
+"3b0cfb0e-6f9f-4625-9990-d8036eca6289"	"tutor"	
+"c2140ead-2d68-4be0-a711-9b8b1ceb9d8d"	"student"	
