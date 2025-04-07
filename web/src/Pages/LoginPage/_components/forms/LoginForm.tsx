@@ -52,7 +52,7 @@ function LoginForm() {
 				if (response.message.role === 'staff') {
 					navigate('/staff')
 				} else {
-					navigate('/')
+					navigate(`/dashboard/${response.message.id}`)
 				}
 			}
 		} catch (err) {

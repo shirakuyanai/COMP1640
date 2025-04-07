@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Sidebar from '@/Components/Sidebar'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { useEffect, useState } from 'react'
@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/actions/getData'
 function Layout() {
 	const { currentUser, authToken, setCurrentUser } = useGlobalState()
 	const navigate = useNavigate()
+	const location = useLocation()
 	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
@@ -27,10 +28,16 @@ function Layout() {
 				
 				setCurrentUser(user)
 				
-				if (user.role === 'staff') {
+				// Only redirect staff if they're not viewing a student dashboard
+				if (user.role === 'staff' && !location.pathname.startsWith('/dashboard/')) {
 					setIsLoading(false)
 					navigate('/staff')
 					return
+				}
+				
+				// Redirect root path to dashboard
+				if (location.pathname === '/') {
+					navigate(`/dashboard/${user.id}`)
 				}
 				
 				setIsLoading(false)
@@ -42,22 +49,33 @@ function Layout() {
 		}
 
 		checkAuth()
-	}, [authToken, navigate, setCurrentUser])
+	}, [authToken, navigate, setCurrentUser, location])
 
 	if (isLoading) {
-		return <div>Loading...</div>
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+				<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+			</div>
+		)
 	}
 
-	if (!currentUser || currentUser.role === 'staff') {
+	// Allow staff to view student dashboards without sidebar
+	if (currentUser?.role === 'staff') {
+		return <Outlet />
+	}
+
+	if (!currentUser) {
 		return null
 	}
 
 	return (
-		<div className='bg-accent/5 min-h-screen'>
+		<div className='min-h-screen bg-gradient-to-br from-purple-50 to-blue-50'>
 			<div className='flex flex-row'>
 				<Sidebar />
-				<div className='flex-1 ml-64 container bg-gray-50'>
-					<Outlet />
+				<div className='flex-1 ml-64 container py-6 px-8'>
+					<div className='bg-white rounded-xl shadow-sm border border-gray-100 min-h-[calc(100vh-3rem)]'>
+						<Outlet />
+					</div>
 				</div>
 			</div>
 		</div>

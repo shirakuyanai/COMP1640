@@ -1,16 +1,17 @@
 import React from 'react'
 import { FaHouse, FaChartLine } from 'react-icons/fa6'
 import { FaBookOpenReader } from 'react-icons/fa6'
-import MenuButton from '@/Components/MenuButton'
 import { FaGear } from 'react-icons/fa6'
 import { FaRightFromBracket } from 'react-icons/fa6'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { LogoutAPI } from '@/actions/postData'
+import { cn } from '@/lib/utils'
 
 function StaffSidebar() {
 	const { currentUser, setAuthToken, setCurrentUser } = useGlobalState()
 	const navigate = useNavigate()
+	const location = useLocation()
 
 	const handleLogout = async () => {
 		const response = await LogoutAPI({ setAuthToken, setCurrentUser })
@@ -19,45 +20,79 @@ function StaffSidebar() {
 		}
 	}
 
+	const MenuItem = ({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) => {
+		const isActive = location.pathname.startsWith(href)
+		
+		return (
+			<Link 
+				to={href}
+				className={cn(
+					"flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+					isActive 
+						? "bg-gradient-to-r from-indigo-50 to-blue-50 text-blue-700 font-medium border-l-4 border-blue-500" 
+						: "text-slate-600 hover:bg-slate-100"
+				)}
+			>
+				<div className={cn(
+					"flex items-center justify-center",
+					isActive ? "text-blue-700" : "text-slate-500"
+				)}>
+					{icon}
+				</div>
+				<span className="text-sm">{label}</span>
+			</Link>
+		)
+	}
+
 	return (
-		<div className='flex w-64 flex-col border border-l-0 border-t-0 h-screen fixed top-0 left-0 border-gray-300 gap-4 m-0 p-0'>
-			<div className='flex flex-col gap-2 p-5'>
-				<h1 className='text-2xl mb-5 text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-700 font-bold'>
+		<div className="flex w-64 flex-col bg-white border-r border-slate-200 shadow-sm h-screen fixed top-0 left-0 gap-4 m-0 p-0">
+			<div className='flex flex-col gap-3 p-5'>
+				<h1 className='text-2xl mb-5 pt-3 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 font-bold'>
 					<Link to='/staff'>eTutoring - Staff</Link>
 				</h1>
-				<MenuButton href='/staff'>
-					<FaChartLine className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Dashboard</p>
-				</MenuButton>
-				<MenuButton href='/staff/classes/new'>
-					<FaHouse className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Add a new class</p>
-				</MenuButton>
-				<MenuButton href='/staff/reallocate'>
-					<FaBookOpenReader className='text-gray-600 h-5 w-5' />{' '}
-					<p className='text-sm'>Reallocate student(s)</p>
-				</MenuButton>
+				
+				<div className="space-y-1">
+					<MenuItem 
+						href='/staff' 
+						icon={<FaChartLine className='h-5 w-5' />} 
+						label="Dashboard" 
+					/>
+					<MenuItem 
+						href='/staff/classes/new' 
+						icon={<FaHouse className='h-5 w-5' />} 
+						label="Add a new class" 
+					/>
+					<MenuItem 
+						href='/staff/reallocate' 
+						icon={<FaBookOpenReader className='h-5 w-5' />} 
+						label="Reallocate student(s)" 
+					/>
+				</div>
 			</div>
-			<div className='fixed bottom-0 border border-l-0 border-r-0 border-b-0 border-gray-300 w-64 p-5'>
-				<div className='flex flex-col gap-4'>
-					<div className='flex flex-row gap-4 align-middle items-center justify-between'>
-						<div className='flex flex-row gap-4 align-middle items-center'>
-							<div className='border border-gray-200 rounded-full w-10 h-10 bg-gray-200'></div>
-							<div className='flex flex-col'>
-								<h4 className='text-sm font-semibold'>
-									{currentUser?.username}
-								</h4>
-								<h4 className='text-sm'>{currentUser?.role.toUpperCase()}</h4>
-							</div>
+			
+			<div className='fixed bottom-0 border-t border-slate-200 w-64 p-5 bg-white'>
+				<div className='flex items-center justify-between'>
+					<div className='flex items-center gap-3'>
+						<div className='bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full w-10 h-10 flex items-center justify-center text-white font-medium'>
+							{currentUser?.username?.substring(0, 1)?.toUpperCase() || 'S'}
 						</div>
-						<div className='flex gap-2'>
-							<Link to='#'>
-								<FaGear className='h-5 w-5 text-gray-600 hover:text-gray-800' />
-							</Link>
-							<button onClick={handleLogout}>
-								<FaRightFromBracket className='h-5 w-5 text-red-500 hover:text-red-700' />
-							</button>
+						<div className='flex flex-col'>
+							<h4 className='text-sm font-semibold text-slate-800'>
+								{currentUser?.username}
+							</h4>
+							<h4 className='text-xs text-slate-500'>{currentUser?.role.toUpperCase()}</h4>
 						</div>
+					</div>
+					<div className='flex gap-3'>
+						<button className="rounded-full p-2 hover:bg-slate-100 transition-colors">
+							<FaGear className='h-5 w-5 text-slate-500 hover:text-slate-700' />
+						</button>
+						<button 
+							onClick={handleLogout}
+							className="rounded-full p-2 hover:bg-red-50 transition-colors"
+						>
+							<FaRightFromBracket className='h-5 w-5 text-red-500 hover:text-red-700' />
+						</button>
 					</div>
 				</div>
 			</div>

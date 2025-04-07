@@ -8,46 +8,62 @@ import Tutor from '../schema/Tutor.js'
 export const getAllMeetingsOfAClass = async (classId) => {
 	try {
 		const meetings = await db
-			.select()
+			.select({
+				meetingId: Meeting.meetingId,
+				classId: Meeting.classId,
+				meetingDate: Meeting.meetingDate,
+				meetingType: Meeting.meetingType,
+				meetingNotes: Meeting.meetingNotes,
+				meetingLink: Meeting.meetingLink,
+				location: Meeting.location,
+				studentAttended: Meeting.studentAttended
+			})
 			.from(Meeting)
 			.where(eq(Meeting.classId, classId))
 
 		if (meetings.length === 0) {
-			logError('get all meetings of a class', 'No meetings found')
 			return {
-				status: 404,
-				item: 'No meetings found',
+				status: 200,
+				item: []
 			}
 		}
 
 		const this_class = await db
-			.select()
+			.select({
+				id: Class.id,
+				className: Class.className,
+				tutorId: Class.tutorId,
+				studentId: Class.studentId,
+				startDate: Class.startDate,
+				endDate: Class.endDate
+			})
 			.from(Class)
 			.where(eq(Class.id, classId))
 
 		if (this_class.length === 0) {
-			logError('get all meetings of a class', 'Invalid class')
 			return {
-				status: 404,
-				item: 'Invalid class',
+				status: 200,
+				item: []
 			}
 		}
 
 		const tutor = await db
-			.select()
+			.select({
+				tutorId: Tutor.tutorId
+			})
 			.from(Tutor)
 			.where(eq(Tutor.tutorId, this_class[0].tutorId))
 
 		if (tutor.length === 0) {
-			logError('get all meetings of a class', 'Invalid tutor')
 			return {
-				status: 404,
-				item: 'Invalid tutor',
+				status: 200,
+				item: []
 			}
 		}
 
 		const processed_meetings = meetings.map((meeting) => ({
 			meetingId: meeting.meetingId,
+			classId: meeting.classId,
 			meetingDate: new Date(meeting.meetingDate).toLocaleString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -57,18 +73,18 @@ export const getAllMeetingsOfAClass = async (classId) => {
 				second: '2-digit',
 			}),
 			meetingType: meeting.meetingType,
-			meetingLink: meeting.meetingLink,
-			location: meeting.location,
-			meetingNotes: meeting.meetingNotes,
-			studentAttended: meeting.studentAttended,
+			meetingLink: meeting.meetingLink || null,
+			location: meeting.location || null,
+			meetingNotes: meeting.meetingNotes || null,
+			studentAttended: meeting.studentAttended
 		}))
 
 		return { status: 200, item: processed_meetings }
 	} catch (err) {
-		logError('get all meetings of a class', err)
+		console.error('Error in getAllMeetingsOfAClass:', err)
 		return {
 			status: 500,
-			item: err,
+			item: []
 		}
 	}
 }
@@ -98,7 +114,7 @@ export const newMeeting = async ({
 				classId,
 				meetingDate: new Date(meetingDate),
 				meetingType,
-				meetingNote: meetingNote ? meetingNote : null,
+				meetingNotes: meetingNote ? meetingNote : null,
 				meetingLink: meetingLink ? meetingLink : null,
 				location: location ? location : null,
 				studentAttended,

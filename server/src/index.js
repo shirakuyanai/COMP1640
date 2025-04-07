@@ -46,6 +46,8 @@ import {
 	getDataForCreatingClass,
 	reallocateClass,
 	getAllClasses,
+	deleteClass,
+	updateClass,
 } from './db/class.js'
 import { getLoggedInUser } from './db/user.js'
 import {
@@ -53,6 +55,21 @@ import {
 	getMessagesOfConversation,
 	saveMessage,
 } from './db/message.js'
+
+// Import the post and comment functions
+import {
+	createPost,
+	getPostsByClassId,
+	getPostById,
+	updatePost,
+	deletePost,
+} from './db/post.js'
+import {
+	createComment,
+	getCommentsByPostId,
+	updateComment,
+	deleteComment,
+} from './db/comment.js'
 
 import { Server } from 'socket.io'
 import http from 'http'
@@ -152,11 +169,9 @@ connectToDatabase().then(() => {
 				studentId: req.body.studentId,
 				tutorId: req.body.tutorId,
 				className: req.body.className,
-				description: req.body.description,
 				startDate: req.body.startDate,
 				endDate: req.body.endDate,
-				schedule: req.body.schedule,
-				meetingLink: req.body.meetingLink,
+				
 			})
 			res.status(response.status).json(response.item)
 		},
@@ -297,6 +312,158 @@ connectToDatabase().then(() => {
 			res.status(response.status || 200).json(response)
 		},
 	)
+
+	// Posts and Comments endpoints
+	app.post(
+		'/createPost',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await createPost({
+				userId: req.body.userId,
+				classId: req.body.classId,
+				title: req.body.title,
+				postContent: req.body.postContent,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.get(
+		'/getPostsByClassId/:classId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getPostsByClassId(req.params.classId)
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.get(
+		'/getPostById/:postId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getPostById(req.params.postId)
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.put(
+		'/updatePost',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await updatePost({
+				postId: req.body.postId,
+				userId: req.body.userId,
+				title: req.body.title,
+				postContent: req.body.postContent,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.delete(
+		'/deletePost/:postId/:userId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await deletePost({
+				postId: req.params.postId,
+				userId: req.params.userId,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.post(
+		'/createComment',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await createComment({
+				postId: req.body.postId,
+				userId: req.body.userId,
+				commentContent: req.body.commentContent,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.get(
+		'/getCommentsByPostId/:postId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await getCommentsByPostId(req.params.postId)
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.put(
+		'/updateComment',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await updateComment({
+				commentId: req.body.commentId,
+				userId: req.body.userId,
+				commentContent: req.body.commentContent,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.delete(
+		'/deleteComment/:commentId/:userId',
+		authenticateApp,
+		authenticateToken,
+		async (req, res) => {
+			const response = await deleteComment({
+				commentId: req.params.commentId,
+				userId: req.params.userId,
+			})
+			res.status(response.status).json(response.item)
+		},
+	)
+
+	app.delete(
+		'/deleteClass',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			try {
+				const response = await deleteClass(req.body.classId);
+				res.status(response.status).json(response);
+			} catch (error) {
+				console.error('Error in /deleteClass endpoint:', error);
+				res.status(500).json({ error: error.message || 'Internal server error' });
+			}
+		},
+	)
+
+	app.put(
+		'/updateClass',
+		authenticateApp,
+		authenticateToken,
+		staffOnly,
+		async (req, res) => {
+			try {
+				const response = await updateClass({
+					classId: req.body.classId,
+					className: req.body.className,
+					startDate: req.body.startDate,
+					endDate: req.body.endDate
+				});
+				res.status(response.status).json(response);
+			} catch (error) {
+				console.error('Error in /updateClass endpoint:', error);
+				res.status(500).json({ error: error.message || 'Internal server error' });
+			}
+		},
+	);
 
 	server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 })

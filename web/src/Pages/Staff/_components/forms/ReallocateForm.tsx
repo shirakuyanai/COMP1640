@@ -15,6 +15,15 @@ import { getDataForCreatingClass } from '@/actions/getData'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { getAllClasses } from '@/actions/getData'
 import { reallocateClass } from '@/actions/postData'
+import { toast } from '@/Components/ui/use-toast'
+import { 
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/Components/ui/select'
+import { Loader2 } from 'lucide-react'
 
 // Schema for the reallocation form
 const reallocateSchema = z.object({
@@ -32,14 +41,15 @@ function ReallocateForm() {
 		tutors: [],
 	})
 	const [isLoading, setIsLoading] = useState(true)
+	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [error, setError] = useState('')
 
 	const form = useForm<z.infer<typeof reallocateSchema>>({
 		resolver: zodResolver(reallocateSchema),
 		defaultValues: {
 			classId: '',
-			newStudentId: '',
-			newTutorId: '',
+			newStudentId: 'none',
+			newTutorId: 'none',
 		},
 	})
 
@@ -56,14 +66,12 @@ function ReallocateForm() {
 				])
 
 				if (classesData) {
-					console.log('Classes data:', classesData)
 					setClasses(classesData)
 				} else {
 					setError('Failed to fetch classes')
 				}
 
 				if (studentsAndTutorsData) {
-					console.log('Students and tutors data:', studentsAndTutorsData)
 					setStudentsAndTutors(studentsAndTutorsData)
 				} else {
 					setError('Failed to fetch students and tutors')
@@ -71,6 +79,11 @@ function ReallocateForm() {
 			} catch (err) {
 				console.error('Error fetching data:', err)
 				setError('Failed to load data')
+				toast({
+					title: "Error",
+					description: "Failed to load necessary data. Please try again.",
+					variant: "destructive",
+				})
 			} finally {
 				setIsLoading(false)
 			}
@@ -84,37 +97,74 @@ function ReallocateForm() {
 	// Update selected class when classId changes
 	const onClassChange = (classId: string) => {
 		const selected = classes.find((c: any) => c.id === classId)
-		console.log('Selected class:', selected)
 		setSelectedClass(selected)
 		form.setValue('classId', classId)
 	}
 
 	const onSubmit = async (values: z.infer<typeof reallocateSchema>) => {
 		try {
+			setIsSubmitting(true)
 			setError('')
-			console.log('Form values:', values)
-			const result = await reallocateClass(authToken, values)
+			
+			// Convert the form values - replace 'none' with empty string for API
+			const formData = {
+				...values,
+				newStudentId: values.newStudentId === 'none' ? '' : values.newStudentId,
+				newTutorId: values.newTutorId === 'none' ? '' : values.newTutorId,
+			}
+			
+			if (!formData.newStudentId && !formData.newTutorId) {
+				toast({
+					title: "Validation Error",
+					description: "You must select either a new student or a new tutor (or both).",
+					variant: "destructive",
+				})
+				return
+			}
+			
+			const result = await reallocateClass(authToken, formData)
 			
 			if (result.success) {
-				alert('Class reallocated successfully')
+				toast({
+					title: "Success",
+					description: "Class has been reallocated successfully.",
+				})
 				// Reset form
-				form.reset()
+				form.reset({
+					classId: '',
+					newStudentId: 'none',
+					newTutorId: 'none',
+				})
 				setSelectedClass(null)
 			} else {
 				setError(result.error || 'Failed to reallocate class')
+				toast({
+					title: "Error",
+					description: result.error || "Failed to reallocate class. Please try again.",
+					variant: "destructive",
+				})
 			}
 		} catch (error) {
 			console.error('Error in form submission:', error)
-			setError(error instanceof Error ? error.message : 'Failed to reallocate class')
+			const errorMsg = error instanceof Error ? error.message : 'Failed to reallocate class'
+			setError(errorMsg)
+			toast({
+				title: "Error",
+				description: errorMsg,
+				variant: "destructive",
+			})
+		} finally {
+			setIsSubmitting(false)
 		}
 	}
 
 	if (isLoading) {
-		return <div>Loading...</div>
-	}
-
-	if (error) {
-		return <div className="text-red-500">{error}</div>
+		return (
+			<div className="flex flex-col items-center justify-center py-12">
+				<Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-2" />
+				<p className="text-gray-600">Loading form data...</p>
+			</div>
+		)
 	}
 
 	return (
@@ -130,23 +180,32 @@ function ReallocateForm() {
 						name='classId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Select Class</FormLabel>
+								<FormLabel className="text-gray-700 font-medium">Select Class</FormLabel>
 								<FormControl>
-									<select
-										className='border p-4 rounded-md w-full'
+									<Select
 										value={field.value}
-										onChange={(e) => onClassChange(e.target.value)}
+										onValueChange={(value) => onClassChange(value)}
 									>
-										<option value=''>Select a class</option>
-										{classes.map((classItem: any) => (
-											<option
-												key={classItem.id}
-												value={classItem.id}
-											>
-												{classItem.className}
-											</option>
-										))}
-									</select>
+										<SelectTrigger className="w-full border border-gray-200 rounded-md h-11">
+											<SelectValue placeholder="Select a class" />
+										</SelectTrigger>
+										<SelectContent>
+											{classes.length > 0 ? (
+												classes.map((classItem: any) => (
+													<SelectItem
+														key={classItem.id}
+														value={classItem.id}
+													>
+														{classItem.className}
+													</SelectItem>
+												))
+											) : (
+												<SelectItem value="" disabled>
+													No classes available
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -155,20 +214,42 @@ function ReallocateForm() {
 
 					{/* Show current class details if a class is selected */}
 					{selectedClass && (
-						<div className="bg-gray-50 p-4 rounded-md">
-							<h3 className="font-semibold mb-2">Current Class Details</h3>
-							<p>Class Name: {selectedClass.className}</p>
-							<p>Current Student: {selectedClass.studentUsername}</p>
-							<p>Current Tutor: {selectedClass.tutorUsername}</p>
-							{selectedClass.description && (
-								<p>Description: {selectedClass.description}</p>
-							)}
-							{selectedClass.startDate && (
-								<p>Start Date: {new Date(selectedClass.startDate).toLocaleDateString()}</p>
-							)}
-							{selectedClass.endDate && (
-								<p>End Date: {new Date(selectedClass.endDate).toLocaleDateString()}</p>
-							)}
+						<div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-100">
+							<h3 className="font-semibold mb-3 text-purple-800">Current Class Details</h3>
+							<div className="space-y-2">
+								<div className="flex items-center justify-between">
+									<span className="text-gray-600 text-sm">Class Name:</span>
+									<span className="font-medium">{selectedClass.className}</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-gray-600 text-sm">Current Student:</span>
+									<span className="font-medium">{selectedClass.studentUsername}</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-gray-600 text-sm">Current Tutor:</span>
+									<span className="font-medium">{selectedClass.tutorUsername}</span>
+								</div>
+								{selectedClass.description && (
+									<div className="flex items-center justify-between">
+										<span className="text-gray-600 text-sm">Description:</span>
+										<span className="font-medium">{selectedClass.description}</span>
+									</div>
+								)}
+								<div className="grid grid-cols-2 gap-4 mt-2 pt-2 border-t border-purple-100">
+									{selectedClass.startDate && (
+										<div className="flex flex-col">
+											<span className="text-gray-600 text-xs">Start Date:</span>
+											<span className="font-medium">{new Date(selectedClass.startDate).toLocaleDateString()}</span>
+										</div>
+									)}
+									{selectedClass.endDate && (
+										<div className="flex flex-col">
+											<span className="text-gray-600 text-xs">End Date:</span>
+											<span className="font-medium">{new Date(selectedClass.endDate).toLocaleDateString()}</span>
+										</div>
+									)}
+								</div>
+							</div>
 						</div>
 					)}
 
@@ -178,23 +259,33 @@ function ReallocateForm() {
 						name='newStudentId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>New Student (Optional)</FormLabel>
+								<FormLabel className="text-gray-700 font-medium">New Student (Optional)</FormLabel>
 								<FormControl>
-									<select
-										className='border p-4 rounded-md w-full'
-										value={field.value ?? ''}
-										onChange={(e) => field.onChange(e.target.value)}
+									<Select
+										value={field.value || "none"}
+										onValueChange={field.onChange}
 									>
-										<option value=''>Select new student</option>
-										{studentsAndTutors.students.map((student: any) => (
-											<option
-												key={student.studentId}
-												value={student.studentId}
-											>
-												{student.username}
-											</option>
-										))}
-									</select>
+										<SelectTrigger className="w-full border border-gray-200 rounded-md h-11">
+											<SelectValue placeholder="Select new student" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">None (Keep current)</SelectItem>
+											{studentsAndTutors.students.length > 0 ? (
+												studentsAndTutors.students.map((student: any) => (
+													<SelectItem
+														key={student.studentId}
+														value={student.studentId}
+													>
+														{student.username}
+													</SelectItem>
+												))
+											) : (
+												<SelectItem value="no_students" disabled>
+													No students available
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -207,23 +298,33 @@ function ReallocateForm() {
 						name='newTutorId'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>New Tutor (Optional)</FormLabel>
+								<FormLabel className="text-gray-700 font-medium">New Tutor (Optional)</FormLabel>
 								<FormControl>
-									<select
-										className='border p-4 rounded-md w-full'
-										value={field.value ?? ''}
-										onChange={(e) => field.onChange(e.target.value)}
+									<Select
+										value={field.value || "none"}
+										onValueChange={field.onChange}
 									>
-										<option value=''>Select new tutor</option>
-										{studentsAndTutors.tutors.map((tutor: any) => (
-											<option
-												key={tutor.tutorId}
-												value={tutor.tutorId}
-											>
-												{tutor.username}
-											</option>
-										))}
-									</select>
+										<SelectTrigger className="w-full border border-gray-200 rounded-md h-11">
+											<SelectValue placeholder="Select new tutor" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">None (Keep current)</SelectItem>
+											{studentsAndTutors.tutors.length > 0 ? (
+												studentsAndTutors.tutors.map((tutor: any) => (
+													<SelectItem
+														key={tutor.tutorId}
+														value={tutor.tutorId}
+													>
+														{tutor.username}
+													</SelectItem>
+												))
+											) : (
+												<SelectItem value="no_tutors" disabled>
+													No tutors available
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -232,15 +333,22 @@ function ReallocateForm() {
 				</div>
 
 				{error && (
-					<div className="text-red-500">{error}</div>
+					<div className="text-red-500 bg-red-50 p-3 rounded-md border border-red-200 text-sm">
+						{error}
+					</div>
 				)}
 
 				<div className='self-end'>
 					<Button
-						className='bg-gradient-to-r from-purple-500 to-blue-700 cursor-pointer'
-						disabled={form.formState.isSubmitting}
+						className='bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 shadow-md hover:shadow-lg'
+						disabled={isSubmitting || !form.formState.isValid || !selectedClass}
 					>
-						{form.formState.isSubmitting ? 'Reallocating...' : 'Reallocate'}
+						{isSubmitting ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Reallocating...
+							</>
+						) : 'Reallocate Class'}
 					</Button>
 				</div>
 			</form>
