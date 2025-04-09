@@ -14,6 +14,8 @@ import ClassPage from './Pages/Classes/ClassPage'
 import { Toaster } from '@/Components/ui/toaster'
 import MeetingPage from './Pages/Staff/Class/MeetingPage'
 import NewMeeting from './Pages/Staff/Class/MeetingPage/NewMeeting'
+import Schedule from './Pages/Schedule'
+import ViewUserPublicInfo from './Pages/ViewUserPublicInfo'
 
 function App() {
 	return (
@@ -29,12 +31,18 @@ function App() {
 						path='/login'
 						element={<LoginPage />}
 					/>
+					<Route
+						index
+						path='/user/view/:userId'
+						element={<ViewUserPublicInfo />}
+					/>
 					<Route element={<Layout />}>
 						<Route
 							index
 							path='/'
-							element={<HomePage />}
+							element={<OverViewPage />}
 						/>
+
 						<Route
 							path='/dashboard/overview'
 							element={<OverViewPage />}
@@ -45,6 +53,13 @@ function App() {
 							path='/dashboard/classes'
 							element={<ClassesPage />}
 						/>
+
+						<Route
+							index
+							path='/dashboard/schedule'
+							element={<Schedule />}
+						/>
+
 						<Route
 							index
 							path='/dashboard/classes/:id'

@@ -50,7 +50,7 @@ import {
 	deleteClass,
 	updateClass,
 } from './db/class.js'
-import { getLoggedInUser } from './db/user.js'
+import { getLoggedInUser, getUserPublicInfoById } from './db/user.js'
 import {
 	getConversation,
 	getMessagesOfConversation,
@@ -231,6 +231,16 @@ connectToDatabase()
 				const response = await changeMeetingAttendance({
 					meetings: req.body.meetings,
 				})
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.get(
+			'/getUserPublicInfoById/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await getUserPublicInfoById(req.params.userId)
 				res.status(response.status).json(response.item)
 			},
 		)

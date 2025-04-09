@@ -76,3 +76,33 @@ export const getLoggedInUser = async (req, res) => {
 		return { status: 500, item: logError('get logged in user', err) }
 	}
 }
+
+export const getUserPublicInfoById = async (userId) => {
+	try {
+		if (!userId) {
+			logError('get user public info by id', `User ID is required`)
+			return { status: 400, item: 'User ID is required' }
+		}
+
+		const user = await db
+			.select({
+				username: User.username,
+				email: User.email,
+				biography: User.biography,
+			})
+			.from(User)
+			.where(eq(User.userId, userId))
+			.limit(1)
+
+		if (!user || user.length === 0) {
+			logError('get user public info by id', `User not found`)
+			return { status: 404, item: 'User not found' }
+		}
+
+		Log(`get user public info by id`, `User found: ${userId}`, user[0])
+		return { status: 200, item: user[0] }
+	} catch (err) {
+		logError('get user public info by id', err)
+		return { status: 500, item: logError('get user public info by id', err) }
+	}
+}

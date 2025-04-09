@@ -2,7 +2,6 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import StaffSidebar from '@/Components/StaffSidebar'
 import { useEffect, useState } from 'react'
 import { useGlobalState } from '@/misc/GlobalStateContext'
-import { getCurrentUser } from '@/actions/getData'
 
 function StaffLayout() {
 	const { currentUser, isLoading, setIsLoading, authToken } = useGlobalState()

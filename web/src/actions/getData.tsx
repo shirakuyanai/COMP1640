@@ -67,6 +67,33 @@ export const getConversation = async ({
 	return data
 }
 
+export const getUserPublicInfoById = async ({
+	token,
+	userId,
+}: {
+	token: string
+	userId?: string
+}) => {
+	const url = `${import.meta.env.VITE_HOST}/getUserPublicInfoById/${userId}`
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authentication: `Bearer ${token}`,
+			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+		},
+	}
+
+	const response = await fetch(url, options)
+	const data = await response.json()
+
+	if (response.status !== 200) {
+		return null
+	}
+	return data
+}
+
 export const getMessages = async ({
 	token,
 	conversationId,
