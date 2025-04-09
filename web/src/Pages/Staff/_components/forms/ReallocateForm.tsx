@@ -352,7 +352,8 @@ function ReallocateForm() {
 											<SelectValue placeholder='Select a class' />
 										</SelectTrigger>
 										<SelectContent>
-											{classes.length > 0 ? (
+											<SelectItem value='none'>No classes available</SelectItem>
+											{classes.length > 0 &&
 												classes.map((classItem: any) => (
 													<SelectItem
 														key={classItem.id}
@@ -360,15 +361,7 @@ function ReallocateForm() {
 													>
 														{classItem.className}
 													</SelectItem>
-												))
-											) : (
-												<SelectItem
-													value=''
-													disabled
-												>
-													No classes available
-												</SelectItem>
-											)}
+												))}
 										</SelectContent>
 									</Select>
 								</FormControl>
