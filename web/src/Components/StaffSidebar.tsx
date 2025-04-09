@@ -4,6 +4,7 @@ import { FaBookOpenReader } from 'react-icons/fa6'
 import { FaGear } from 'react-icons/fa6'
 import { FaRightFromBracket } from 'react-icons/fa6'
 import { FaBars, FaXmark } from 'react-icons/fa6'
+import { FaCalendar, FaUserGraduate, FaPlus } from 'react-icons/fa'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useGlobalState } from '@/misc/GlobalStateContext'
 import { LogoutAPI } from '@/actions/postData'
@@ -28,7 +29,22 @@ function StaffSidebar() {
 	}
 
 	const MenuItem = ({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) => {
-		const isActive = location.pathname.startsWith(href)
+		// Improved URL matching logic for menu highlighting
+		const isActive = (() => {
+			// Exact match for dashboard
+			if (href === '/staff' && location.pathname === '/staff') {
+				return true;
+			}
+			// Match for classes page
+			else if (href === '/staff/classes/new' && location.pathname.includes('/staff/classes/new')) {
+				return true;
+			}
+			// Match for reallocate page
+			else if (href === '/staff/reallocate' && location.pathname.includes('/staff/reallocate')) {
+				return true;
+			}
+			return false;
+		})();
 		
 		return (
 			<Link 
@@ -84,12 +100,12 @@ function StaffSidebar() {
 						/>
 						<MenuItem 
 							href='/staff/classes/new' 
-							icon={<FaHouse className='h-5 w-5' />} 
+							icon={<FaPlus className='h-5 w-5' />} 
 							label="Add a new class" 
 						/>
 						<MenuItem 
 							href='/staff/reallocate' 
-							icon={<FaBookOpenReader className='h-5 w-5' />} 
+							icon={<FaUserGraduate className='h-5 w-5' />} 
 							label="Reallocate student(s)" 
 						/>
 					</div>
