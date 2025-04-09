@@ -1,36 +1,89 @@
-import { getClassById, getConversation, getMessages } from '@/actions/getData'
+import { getClassById, getConversation, getMessages, getUserPublicInfoById } from '@/actions/getData'
 import { getSocket, initializeSocket } from '@/lib/socket'
 import { convertToLocalTimezone } from '@/lib/utils'
 import { useGlobalState } from '@/misc/GlobalStateContext'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { FaPaperPlane } from 'react-icons/fa'
+
+// Interface for message data
+interface Message {
+	messageId: string
+	conversationId: string
+	senderId: string
+	messageContent: string
+	sendDate: string
+}
+
+// Interface for user data
+interface UserInfo {
+	userId: string
+	username: string
+	email?: string
+	firstname?: string
+	lastname?: string
+	biography?: string
+}
 
 const MessagePage = ({ found_class }: { found_class: any }) => {
 	const params = useParams()
 	const navigate = useNavigate()
 	const { authToken, currentUser } = useGlobalState()
 	const [currentClass, setCurrentClass] = useState(null)
-
-	const [messages, setMessages] = useState<
-		{
-			messageId: string
-			conversationId: string
-			senderId: string
-			messageContent: string
-			sendDate: string
-		}[]
-	>([])
+	const [messages, setMessages] = useState<Message[]>([])
 	const [conversation, setConversation] = useState(null)
 	const [socket, setSocket] = useState<any>(null)
+	const [userCache, setUserCache] = useState<Record<string, UserInfo>>({})
+	const messagesEndRef = useRef<HTMLDivElement>(null)
 
+	// Initialize socket connection
 	useEffect(() => {
 		if (currentUser) {
 			initializeSocket(currentUser.username)
 			setSocket(getSocket())
 		}
 	}, [currentUser])
+
+	// Scroll to bottom of messages when new messages arrive
+	useEffect(() => {
+		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+	}, [messages])
+
+	// Fetch user info if not already in cache
+	const fetchUserInfo = async (userId: string) => {
+		// Skip if already in cache
+		if (userCache[userId]) return userCache[userId]
+		
+		// Skip if it's the current user
+		if (currentUser && userId === currentUser.id) {
+			const userInfo = {
+				userId: currentUser.id,
+				username: currentUser.username,
+				firstname: currentUser.firstname,
+				lastname: currentUser.lastname,
+			}
+			setUserCache(prev => ({ ...prev, [userId]: userInfo }))
+			return userInfo
+		}
+
+		try {
+			const response = await getUserPublicInfoById({
+				token: authToken,
+				userId,
+			})
+			
+			if (response) {
+				setUserCache(prev => ({ ...prev, [userId]: response }))
+				return response
+			}
+		} catch (error) {
+			console.error('Error fetching user info:', error)
+		}
+		
+		// Return basic info if fetch fails
+		return { userId, username: 'Unknown User' }
+	}
 
 	const getData = async () => {
 		if (!params.id) navigate('/')
@@ -55,7 +108,13 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 				offset: 0,
 			})
 
-			if (found_messages) setMessages(found_messages)
+			if (found_messages) {
+				setMessages(found_messages)
+				
+				// Pre-fetch user info for all message senders
+				const uniqueSenderIds = [...new Set(found_messages.map(msg => msg.senderId))]
+				uniqueSenderIds.forEach(id => fetchUserInfo(id))
+			}
 		} else {
 			navigate('/')
 		}
@@ -66,13 +125,18 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 			if (conversation) socket.emit('joinRoom', (conversation as any).id)
 			socket.on('receiveMessage', (messageData: any) => {
 				setMessages((prevMessages) => [...prevMessages, messageData])
+				
+				// Fetch user info for new message sender if not in cache
+				if (messageData.senderId && !userCache[messageData.senderId]) {
+					fetchUserInfo(messageData.senderId)
+				}
 			})
 
 			return () => {
 				socket.off('receiveMessage')
 			}
 		}
-	}, [socket, conversation])
+	}, [socket, conversation, userCache])
 
 	useEffect(() => {
 		if (currentUser) {
@@ -102,6 +166,23 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 		}
 	}
 
+	// Get the first letter of username for avatar
+	const getUserInitial = (user?: UserInfo) => {
+		if (!user) return 'U'
+		
+		if (user.firstname) return user.firstname.charAt(0).toUpperCase()
+		if (user.username) return user.username.charAt(0).toUpperCase()
+		return 'U'
+	}
+
+	// Get user display name
+	const getDisplayName = (user?: UserInfo) => {
+		if (!user) return 'Unknown User'
+		
+		if (user.firstname && user.lastname) return `${user.firstname} ${user.lastname}`
+		return user.username
+	}
+
 	if (socket)
 		return (
 			<div className='flex h-full bg-white rounded-lg shadow-sm overflow-hidden'>
@@ -109,11 +190,9 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 				<div className='flex-1 flex flex-col'>
 					<div className='p-2 md:p-4 flex items-center justify-between border-b border-gray-200'>
 						<div className='flex items-center'>
-							<img
-								src='https://storage.googleapis.com/a1aa/image/df0CF7_imT5d76erw6dMhuYdT-uuq7ZtPaisg2K6FYI.jpg'
-								alt='Group 11223'
-								className='rounded-full w-8 h-8 md:w-10 md:h-10'
-							/>
+							<div className='bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white font-medium'>
+								{currentClass ? (currentClass as any).className.charAt(0).toUpperCase() : 'C'}
+							</div>
 							<span className='ml-2 text-sm md:text-lg font-semibold truncate max-w-[120px] md:max-w-full'>
 								{currentClass ? (currentClass as any).className : 'N/A'}
 							</span>
@@ -129,56 +208,59 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 					{/* Chat Messages */}
 					<div className='flex-1 p-2 md:p-4 overflow-y-auto'>
 						<div className='flex flex-col space-y-3 md:space-y-4'>
-							{/* Example message */}
-
 							{messages.length === 0 && (
 								<div className='text-center text-gray-500'>No messages yet</div>
 							)}
 
 							{messages.length > 0 &&
 								messages.map((message, i) => {
-									const key =
-										message.messageId || `message-${i}-${message.sendDate}`
+									const key = message.messageId || `message-${i}-${message.sendDate}`
+									const isCurrentUser = message.senderId === currentUser?.id
+									const senderInfo = userCache[message.senderId]
 
-									return message.senderId === currentUser.id ? (
-										<div
-											className='flex justify-end space-x-2'
-											key={key}
-										>
+									return isCurrentUser ? (
+										<div className='flex justify-end space-x-2' key={key}>
 											<div>
-												<div className='bg-blue-500 text-white p-2 rounded-lg max-w-[200px] sm:max-w-[300px] md:max-w-[400px]'>
-													<p className='break-words text-sm md:text-base'>
-														{message.messageContent}
-													</p>
-													<span className='text-[10px] md:text-xs text-gray-200'>
-														{convertToLocalTimezone(message.sendDate)}
-													</span>
+												<div className='flex flex-col'>
+													<span className="text-xs text-gray-500 text-right mr-1 mb-1">You</span>
+													<div className='bg-blue-500 text-white p-2 rounded-lg max-w-[200px] sm:max-w-[300px] md:max-w-[400px]'>
+														<p className='break-words text-sm md:text-base'>
+															{message.messageContent}
+														</p>
+														<span className='text-[10px] md:text-xs text-gray-200 block text-right mt-1'>
+															{convertToLocalTimezone(message.sendDate)}
+														</span>
+													</div>
 												</div>
+											</div>
+											<div className='bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white font-medium'>
+												{getUserInitial(senderInfo)}
 											</div>
 										</div>
 									) : (
-										<div
-											className='flex items-start space-x-2'
-											key={key}
-										>
-											<img
-												src='https://storage.googleapis.com/a1aa/image/dh0AmYifcf0VudUDHtqN8bwFEwYDcelC5fhSHMFLOYQ.jpg'
-												alt='Patrick Hendricks'
-												className='rounded-full w-8 h-8 md:w-10 md:h-10'
-											/>
+										<div className='flex items-start space-x-2' key={key}>
+											<div className='bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white font-medium'>
+												{getUserInitial(senderInfo)}
+											</div>
 											<div>
-												<div className='bg-purple-500 text-white p-2 rounded-lg max-w-[200px] sm:max-w-[300px] md:max-w-[400px]'>
-													<p className='break-words text-sm md:text-base'>
-														{message.messageContent}
-													</p>
-													<span className='text-[10px] md:text-xs text-gray-200'>
-														{convertToLocalTimezone(message.sendDate)}
+												<div className='flex flex-col'>
+													<span className="text-xs text-gray-500 ml-1 mb-1">
+														{senderInfo ? getDisplayName(senderInfo) : 'Loading...'}
 													</span>
+													<div className='bg-purple-500 text-white p-2 rounded-lg max-w-[200px] sm:max-w-[300px] md:max-w-[400px]'>
+														<p className='break-words text-sm md:text-base'>
+															{message.messageContent}
+														</p>
+														<span className='text-[10px] md:text-xs text-gray-200 block text-right mt-1'>
+															{convertToLocalTimezone(message.sendDate)}
+														</span>
+													</div>
 												</div>
 											</div>
 										</div>
 									)
 								})}
+								<div ref={messagesEndRef} />
 						</div>
 					</div>
 
@@ -208,6 +290,8 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 				</div>
 			</div>
 		)
+
+	return <div>Loading...</div>
 }
 
 export default MessagePage

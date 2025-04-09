@@ -491,10 +491,20 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ classId }) => {
 														<p className='text-sm md:text-base font-medium text-gray-800'>
 															{post.post.title}
 														</p>
-														<p className='text-xs text-gray-500'>
-															{post.author.firstname} {post.author.lastname}{' '}
-															posted a new discussion
-														</p>
+														<div className='flex items-center gap-1'>
+															<div className='flex items-center'>
+																<div className='bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full w-4 h-4 flex items-center justify-center text-white text-[10px] font-medium'>
+																	{post.author?.firstname ? post.author.firstname.charAt(0).toUpperCase() : 
+																		post.author?.username ? post.author.username.charAt(0).toUpperCase() : 'U'}
+																</div>
+																<span className='text-xs font-medium text-blue-700 ml-1'>
+																	{post.author?.firstname && post.author?.lastname 
+																		? `${post.author.firstname} ${post.author.lastname}`
+																		: post.author?.username || 'Unknown user'}
+																</span>
+															</div>
+															<span className='text-xs text-gray-500'>posted a new discussion</span>
+														</div>
 													</div>
 												</div>
 												<div className='bg-white px-3 py-1 rounded-full text-xs text-blue-600 border border-blue-200 ml-10 md:ml-0'>
