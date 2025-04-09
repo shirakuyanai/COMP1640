@@ -12,8 +12,10 @@ function StaffLayout() {
 			if (!isLoading) {
 				if (!currentUser || !authToken) {
 					navigate('/login')
-				} else {
-					if (currentUser.role !== 'staff') navigate('/')
+				} else if (currentUser.role !== 'staff') {
+					navigate('/')
+				} else if (currentUser.role !== 'system admin') {
+					navigate('/admin')
 				}
 			}
 		} catch (err) {

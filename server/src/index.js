@@ -332,7 +332,6 @@ connectToDatabase()
 			async (req, res) => {
 				try {
 					const response = await getAllClasses()
-console.log(response)
 					if (!response) {
 						console.error('getAllClasses returned null/undefined')
 						return res.status(500).json({ error: 'Internal server error' })

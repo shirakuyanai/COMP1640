@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+} from 'react-router-dom'
 import Layout from './Pages/layout'
 import LoginPage from './Pages/LoginPage'
 import HomePage from './Pages/AdminPage'
@@ -37,7 +42,7 @@ function App() {
 						element={<ViewUserPublicInfo />}
 					/>
 					<Route
-						path='/home'
+						path='/admin'
 						element={<HomePage />}
 					/>
 					<Route element={<Layout />}>
@@ -82,16 +87,28 @@ function App() {
 					{/* Staff routes */}
 					<Route element={<StaffLayout />}>
 						<Route path='/staff'>
-							<Route index element={<StaffDashboardPage />} />
+							<Route
+								index
+								element={<StaffDashboardPage />}
+							/>
 							<Route path='classes'>
-								<Route path='new' element={<AddClass />} />
+								<Route
+									path='new'
+									element={<AddClass />}
+								/>
 							</Route>
-							<Route path='reallocate' element={<ReallocatePage />} />
+							<Route
+								path='reallocate'
+								element={<ReallocatePage />}
+							/>
 						</Route>
 					</Route>
 
 					{/* Catch-all route for 404 */}
-					<Route path='*' element={<NotFound />} />
+					<Route
+						path='*'
+						element={<NotFound />}
+					/>
 				</Routes>
 				<Toaster />
 			</Router>

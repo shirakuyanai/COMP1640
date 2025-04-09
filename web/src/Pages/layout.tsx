@@ -14,7 +14,11 @@ function Layout() {
 				if (!currentUser || !authToken) {
 					navigate('/login')
 				} else {
-					if (currentUser.role === 'staff') navigate('/staff')
+					if (currentUser.role === 'staff') {
+						navigate('/staff')
+					} else if (currentUser.role === 'system admin') {
+						navigate('/admin')
+					}
 				}
 			}
 		} catch (err) {
