@@ -497,5 +497,77 @@ connectToDatabase()
 			},
 		)
 
+		// Get posts by class ID
+		app.get(
+			'/getPostsByClassId/:classId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getPostsByClassId(req.params.classId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getPostsByClassId endpoint:', error)
+					res.status(500).json({ message: 'Failed to get posts' })
+				}
+			},
+		)
+
+		// Get post by ID
+		app.get(
+			'/getPostById/:postId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getPostById(req.params.postId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getPostById endpoint:', error)
+					res.status(500).json({ message: 'Failed to get post' })
+				}
+			},
+		)
+
+		// Update post
+		app.put(
+			'/updatePost',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await updatePost({
+						postId: req.body.postId,
+						userId: req.body.userId,
+						title: req.body.title,
+						postContent: req.body.postContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in updatePost endpoint:', error)
+					res.status(500).json({ message: 'Failed to update post' })
+				}
+			},
+		)
+
+		// Delete post
+		app.delete(
+			'/deletePost/:postId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await deletePost({
+						postId: req.params.postId,
+						userId: req.params.userId,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in deletePost endpoint:', error)
+					res.status(500).json({ message: 'Failed to delete post' })
+				}
+			},
+		)
+
 		server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 	})
