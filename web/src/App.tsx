@@ -21,6 +21,7 @@ import MeetingPage from './Pages/Staff/Class/MeetingPage'
 import NewMeeting from './Pages/Staff/Class/MeetingPage/NewMeeting'
 import Schedule from './Pages/Schedule'
 import ViewUserPublicInfo from './Pages/ViewUserPublicInfo'
+import AdminRoute from './Components/AdminRoute'
 
 function App() {
 	return (
@@ -43,7 +44,11 @@ function App() {
 					/>
 					<Route
 						path='/admin'
-						element={<HomePage />}
+						element={
+							<AdminRoute>
+								<HomePage />
+							</AdminRoute>
+						}
 					/>
 					<Route element={<Layout />}>
 						<Route

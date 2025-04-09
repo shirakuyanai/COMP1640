@@ -55,10 +55,11 @@ function LoginForm() {
 				// Successful login
 				if (response.message.role === 'staff') {
 					navigate('/staff')
-				} else if (response.message.role === 'admin') {
-					// Redirect admin users to the home page
+				} else if (response.message.role === 'system admin' || response.message.role === 'admin') {
+					// Redirect admin users to the admin dashboard
 					navigate('/admin')
 				} else {
+					// Redirect students and other roles to the default dashboard
 					navigate('/')
 				}
 			}

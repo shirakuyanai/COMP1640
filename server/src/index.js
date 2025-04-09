@@ -569,5 +569,80 @@ connectToDatabase()
 			},
 		)
 
+		// Create comment
+		app.post(
+			'/createComment',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await createComment({
+						postId: req.body.postId,
+						userId: req.body.userId,
+						commentContent: req.body.commentContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in createComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to create comment' })
+				}
+			},
+		)
+
+		// Get comments by post ID
+		app.get(
+			'/getCommentsByPostId/:postId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getCommentsByPostId(req.params.postId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getCommentsByPostId endpoint:', error)
+					res.status(500).json({ message: 'Failed to get comments' })
+				}
+			},
+		)
+
+		// Update comment
+		app.put(
+			'/updateComment',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await updateComment({
+						commentId: req.body.commentId,
+						userId: req.body.userId,
+						commentContent: req.body.commentContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in updateComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to update comment' })
+				}
+			},
+		)
+
+		// Delete comment
+		app.delete(
+			'/deleteComment/:commentId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await deleteComment({
+						commentId: req.params.commentId,
+						userId: req.params.userId,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in deleteComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to delete comment' })
+				}
+			},
+		)
+
 		server.listen(PORT, () => console.log(`listening on port ${PORT}`))
 	})
