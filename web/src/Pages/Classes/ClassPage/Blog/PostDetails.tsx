@@ -387,6 +387,7 @@ const PostDetails: React.FC<PostDetailsProps> = ({ postId, onUpdate }) => {
               <Button 
                 onClick={handleUpdatePost}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                disabled={!editPostTitle.trim() || !editPostContent.trim()}
               >
                 Save Changes
               </Button>
@@ -499,6 +500,7 @@ const PostDetails: React.FC<PostDetailsProps> = ({ postId, onUpdate }) => {
                         size="sm"
                         onClick={() => handleEditComment(comment.comment.commentId)}
                         className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                        disabled={!editCommentContent.trim()}
                       >
                         Save
                       </Button>
@@ -578,9 +580,10 @@ const PostDetails: React.FC<PostDetailsProps> = ({ postId, onUpdate }) => {
               <div className="flex justify-end mt-2">
             <Button 
               onClick={handleSubmitComment}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              disabled={!commentContent.trim()}
             >
-                  <FaReply className="h-3 w-3 mr-2" /> 
+              <FaReply className="h-3 w-3 mr-2" /> 
               Post Comment
             </Button>
               </div>
