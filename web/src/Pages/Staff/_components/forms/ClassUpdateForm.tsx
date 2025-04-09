@@ -31,7 +31,7 @@ type ClassUpdateFormProps = {
 function ClassUpdateForm({
 	onSubmit,
 	isLocked = false,
-	initialData
+	initialData,
 }: ClassUpdateFormProps) {
 	const { authToken } = useGlobalState()
 	const navigate = useNavigate()
@@ -43,20 +43,24 @@ function ClassUpdateForm({
 			studentId: '',
 			tutorId: '',
 			startDate: '',
-			endDate: ''
+			endDate: '',
 		},
 	})
 
 	const handleSubmit = async (values: z.infer<typeof addClassSchema>) => {
 		try {
 			// Format dates to match datetime-local input format
-			const formattedStartDate = values.startDate ? new Date(values.startDate).toISOString().slice(0, 16) : undefined
-			const formattedEndDate = values.endDate ? new Date(values.endDate).toISOString().slice(0, 16) : undefined
+			const formattedStartDate = values.startDate
+				? new Date(values.startDate).toISOString().slice(0, 16)
+				: undefined
+			const formattedEndDate = values.endDate
+				? new Date(values.endDate).toISOString().slice(0, 16)
+				: undefined
 
 			const formData = {
 				...values,
 				startDate: formattedStartDate,
-				endDate: formattedEndDate
+				endDate: formattedEndDate,
 			}
 
 			if (onSubmit) {
@@ -65,14 +69,14 @@ function ClassUpdateForm({
 				const response = await AddNewClass(formData, authToken)
 				if (response.error) {
 					toast({
-						title: "Error",
+						title: 'Error',
 						description: response.message,
-						variant: "destructive"
+						variant: 'destructive',
 					})
 				} else {
 					toast({
-						title: "Success",
-						description: "Class created successfully"
+						title: 'Success',
+						description: 'Class created successfully',
 					})
 					navigate('/staff/class')
 				}
@@ -80,9 +84,9 @@ function ClassUpdateForm({
 		} catch (error) {
 			console.error('Error submitting form:', error)
 			toast({
-				title: "Error",
-				description: "Failed to create class",
-				variant: "destructive"
+				title: 'Error',
+				description: 'Failed to create class',
+				variant: 'destructive',
 			})
 		}
 	}
@@ -146,9 +150,12 @@ function ClassUpdateForm({
 										className='h-12 w-full rounded-md border border-input bg-background px-3 py-2'
 										disabled={isLocked}
 									>
-										<option value="">Select a student</option>
+										<option value=''>Select a student</option>
 										{studentsAndTutors.students.map((student) => (
-											<option key={student.studentId} value={student.studentId}>
+											<option
+												key={student.studentId}
+												value={student.studentId}
+											>
 												{student.username}
 											</option>
 										))}
@@ -173,9 +180,12 @@ function ClassUpdateForm({
 										className='h-12 w-full rounded-md border border-input bg-background px-3 py-2'
 										disabled={isLocked}
 									>
-										<option value="">Select a tutor</option>
+										<option value=''>Select a tutor</option>
 										{studentsAndTutors.tutors.map((tutor) => (
-											<option key={tutor.tutorId} value={tutor.tutorId}>
+											<option
+												key={tutor.tutorId}
+												value={tutor.tutorId}
+											>
 												{tutor.username}
 											</option>
 										))}
@@ -190,11 +200,13 @@ function ClassUpdateForm({
 						name='startDate'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Start Date</FormLabel>
+								<FormLabel>
+									Start Date <p className='text-red-500'>*</p>
+								</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
-										type="datetime-local"
+										type='datetime-local'
 										className='h-12'
 										disabled={isLocked}
 									/>
@@ -208,11 +220,13 @@ function ClassUpdateForm({
 						name='endDate'
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>End Date</FormLabel>
+								<FormLabel>
+									End Date<p className='text-red-500'>*</p>
+								</FormLabel>
 								<FormControl>
 									<Input
 										{...field}
-										type="datetime-local"
+										type='datetime-local'
 										className='h-12'
 										disabled={isLocked}
 									/>
@@ -222,12 +236,12 @@ function ClassUpdateForm({
 						)}
 					/>
 				</div>
-				<Button 
-					type="submit" 
-					className="gap-2"
+				<Button
+					type='submit'
+					className='gap-2'
 					disabled={isLocked}
 				>
-					<FaSave className="h-4 w-4" />
+					<FaSave className='h-4 w-4' />
 					Save Class
 				</Button>
 			</form>
