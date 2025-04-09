@@ -46,24 +46,40 @@ function NewMeeting() {
 		)
 	}
 	
-	const [meeting, setMeeting] = useState({
+	const initialValues = {
 		classId: id ?? '',
 		meetingDate: '',
 		meetingType: 'in-person',
-		meetingNote: '',
+		meetingNotes: '',  // Ensure this has an empty string default
 		meetingLink: '',
 		location: '',
 		studentAttended: 0,
-	})
+	};
+	
+	const [meeting, setMeeting] = useState(initialValues);
 
 	const form = useForm<z.infer<typeof newMeetingSchema>>({
 		resolver: zodResolver(newMeetingSchema),
-		defaultValues: meeting,
-	})
+		defaultValues: initialValues,
+	});
+
+	// Ensure form is initialized with state values
+	useEffect(() => {
+		form.reset(initialValues);
+	}, []);
 
 	const onSubmit = async (values: z.infer<typeof newMeetingSchema>) => {
 		try {
-			const response = await AddNewMeeting(values, authToken)
+			// Ensure meetingNotes is never undefined
+			const submitData = {
+				...values,
+				meetingNotes: values.meetingNotes || '',
+			};
+			
+			// Log the values for debugging
+			console.log("Meeting form submission values:", submitData);
+			
+			const response = await AddNewMeeting(submitData, authToken);
 			if (response) {
 				toast({
 					title: "Success!",
@@ -79,6 +95,7 @@ function NewMeeting() {
 				})
 			}
 		} catch (error) {
+			console.error("Error creating meeting:", error);
 			toast({
 				title: "Error",
 				description: "An unexpected error occurred. Please try again.",
@@ -220,7 +237,7 @@ function NewMeeting() {
 							{/* Meeting Note */}
 							<FormField
 								control={form.control}
-								name='meetingNote'
+								name='meetingNotes'
 								render={({ field }) => (
 									<FormItem className='flex flex-col gap-2'>
 										<FormLabel className='flex items-center gap-2 text-gray-700'>
@@ -232,11 +249,12 @@ function NewMeeting() {
 												{...field}
 												className='min-h-24 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all'
 												placeholder="Add details about the meeting agenda, preparation required, etc."
+												value={field.value || ''}
 												onChange={(e) => {
 													field.onChange(e.target.value)
 													setMeeting((prevMeeting) => ({
 														...prevMeeting,
-														meetingNote: e.target.value,
+														meetingNotes: e.target.value,
 													}))
 												}}
 											/>

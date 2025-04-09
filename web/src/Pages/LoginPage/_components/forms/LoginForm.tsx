@@ -51,6 +51,9 @@ function LoginForm() {
 				// Successful login
 				if (response.message.role === 'staff') {
 					navigate('/staff')
+				} else if (response.message.role === 'admin') {
+					// Redirect admin users to the home page
+					navigate('/home')
 				} else {
 					navigate('/')
 				}

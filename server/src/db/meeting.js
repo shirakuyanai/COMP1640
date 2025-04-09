@@ -93,7 +93,7 @@ export const newMeeting = async ({
 	classId,
 	meetingDate,
 	meetingType,
-	meetingNote,
+	meetingNotes,
 	meetingLink,
 	location,
 	studentAttended,
@@ -103,7 +103,7 @@ export const newMeeting = async ({
 			classId,
 			meetingDate,
 			meetingType,
-			meetingNote,
+			meetingNotes,
 			meetingLink,
 			location,
 			studentAttended,
@@ -114,7 +114,7 @@ export const newMeeting = async ({
 				classId,
 				meetingDate: new Date(meetingDate),
 				meetingType,
-				meetingNotes: meetingNote ? meetingNote : null,
+				meetingNotes: meetingNotes ? meetingNotes : null,
 				meetingLink: meetingLink ? meetingLink : null,
 				location: location ? location : null,
 				studentAttended,
@@ -210,6 +210,63 @@ export const deleteMeetingsByClassId = async (classId) => {
 		return {
 			status: 500,
 			error: error.message || 'Failed to delete meetings'
+		};
+	}
+}
+
+export const deleteMeetingById = async (meetingId) => {
+	try {
+		// Check if the meeting exists with more detailed data
+		const existingMeeting = await db
+			.select({
+				meetingId: Meeting.meetingId,
+				classId: Meeting.classId,
+				meetingDate: Meeting.meetingDate
+			})
+			.from(Meeting)
+			.where(eq(Meeting.meetingId, meetingId));
+		
+		if (existingMeeting.length === 0) {
+			return { 
+				status: 404, 
+				item: { 
+					message: 'Meeting not found'
+				} 
+			};
+		}
+
+		// Delete the meeting
+		const deletedMeeting = await db
+			.delete(Meeting)
+			.where(eq(Meeting.meetingId, meetingId))
+			.returning();
+
+		// Check if the meeting was actually deleted
+		if (deletedMeeting.length === 0) {
+			logError('delete meeting by ID', 'Failed to delete meeting');
+			return {
+				status: 500,
+				item: { 
+					message: 'Failed to delete meeting'
+				}
+			};
+		}
+
+		return { 
+			status: 200, 
+			item: { 
+				message: 'Meeting deleted successfully', 
+				meeting: deletedMeeting[0]
+			} 
+		};
+	} catch (error) {
+		console.error('Error in deleteMeetingById:', error);
+		logError('delete meeting by ID', error);
+		return {
+			status: 500,
+			item: { 
+				error: error.message || 'Failed to delete meeting'
+			}
 		};
 	}
 }

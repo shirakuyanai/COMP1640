@@ -404,8 +404,12 @@ export const addNewClass = async ({
 
 export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 	try {
-		if (!classId || !newStudentId || !newTutorId)
-			return { status: 400, item: { error: 'Missing required fields' } }
+		if (!classId)
+			return { status: 400, item: { error: 'Missing required class ID' } }
+		
+		// At least one of the two fields (newStudentId or newTutorId) must be provided
+		if (!newStudentId && !newTutorId)
+			return { status: 400, item: { error: 'At least one of newStudentId or newTutorId must be provided' } }
 
 		let studentUser = null
 		let tutorUser = null
@@ -444,6 +448,21 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			if (!studentUser || studentUser.length === 0) {
 				return { status: 404, item: { error: 'Student not found' } }
 			}
+		} else {
+			// If not changing student, get the current one for email notification
+			const student = await db
+				.select()
+				.from(Student)
+				.where(eq(Student.studentId, existingClass[0].studentId))
+				.execute()
+				
+			if (student && student.length > 0) {
+				studentUser = await db
+					.select()
+					.from(User)
+					.where(eq(User.userId, student[0].userId))
+					.execute()
+			}
 		}
 
 		if (newTutorId) {
@@ -468,7 +487,21 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			if (!tutorUser || tutorUser.length === 0) {
 				return { status: 404, item: { error: 'Tutor not found' } }
 			}
-			if (className) updateObj.className = className
+		} else {
+			// If not changing tutor, get the current one for email notification
+			const tutor = await db
+				.select()
+				.from(Tutor)
+				.where(eq(Tutor.tutorId, existingClass[0].tutorId))
+				.execute()
+				
+			if (tutor && tutor.length > 0) {
+				tutorUser = await db
+					.select()
+					.from(User)
+					.where(eq(User.userId, tutor[0].userId))
+					.execute()
+			}
 		}
 
 		// If no updates are provided
@@ -492,18 +525,25 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			<p>You have been successfully reallocated to this class: ${result[0].className}</p>
 		`
 
-		await sendMail({
-			recipient: studentUser[0].email,
-			content: emailContent,
-			subject: 'Class reallocation notice',
-			success: true,
-		})
-		await sendMail({
-			recipient: tutorUser[0].email,
-			content: emailContent,
-			subject: 'Class reallocation notice',
-			success: true,
-		})
+		// Send emails to both the student and tutor
+		if (studentUser && studentUser.length > 0) {
+			await sendMail({
+				recipient: studentUser[0].email,
+				content: emailContent,
+				subject: 'Class reallocation notice',
+				success: true,
+			})
+		}
+		
+		if (tutorUser && tutorUser.length > 0) {
+			await sendMail({
+				recipient: tutorUser[0].email,
+				content: emailContent,
+				subject: 'Class reallocation notice',
+				success: true,
+			})
+		}
+		
 		return {
 			status: 200,
 			item: {

@@ -80,6 +80,7 @@ import {
 	changeMeetingAttendance,
 	getAllMeetingsOfAClass,
 	newMeeting,
+	deleteMeetingById,
 } from './db/meeting.js'
 import client from './config/redis.config.js'
 
@@ -269,6 +270,24 @@ connectToDatabase()
 			},
 		)
 
+		app.delete(
+			'/deleteMeeting/:meetingId',
+			authenticateApp,
+			authenticateToken,
+			studentsNotAllowed, // Only tutors should be able to delete meetings
+			async (req, res) => {
+				try {
+					const response = await deleteMeetingById(req.params.meetingId);
+					return res.status(response.status).json(response.item);
+				} catch (error) {
+					console.error('Error in deleteMeeting endpoint:', error);
+					return res.status(500).json({ 
+						error: error.message || 'Internal server error during meeting deletion'
+					});
+				}
+			},
+		)
+
 		app.post(
 			'/getMessages',
 			authenticateApp,
@@ -309,11 +328,11 @@ connectToDatabase()
 			'/getAllClasses',
 			authenticateApp,
 			authenticateToken,
-			staffOnly,
+
 			async (req, res) => {
 				try {
 					const response = await getAllClasses()
-
+console.log(response)
 					if (!response) {
 						console.error('getAllClasses returned null/undefined')
 						return res.status(500).json({ error: 'Internal server error' })
@@ -363,191 +382,44 @@ connectToDatabase()
 			authenticateToken,
 			staffOnly,
 			async (req, res) => {
-				const response = await reallocateClass(req.body)
-				res.status(response.status || 200).json(response)
-			},
-		)
-
-		// Posts and Comments endpoints
-		app.post(
-			'/createPost',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await createPost({
-					userId: req.body.userId,
-					classId: req.body.classId,
-					title: req.body.title,
-					postContent: req.body.postContent,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.get(
-			'/getPostsByClassId/:classId',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await getPostsByClassId(req.params.classId)
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.get(
-			'/getPostById/:postId',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await getPostById(req.params.postId)
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.put(
-			'/updatePost',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await updatePost({
-					postId: req.body.postId,
-					userId: req.body.userId,
-					title: req.body.title,
-					postContent: req.body.postContent,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.delete(
-			'/deletePost/:postId/:userId',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await deletePost({
-					postId: req.params.postId,
-					userId: req.params.userId,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.post(
-			'/createComment',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await createComment({
-					postId: req.body.postId,
-					userId: req.body.userId,
-					commentContent: req.body.commentContent,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.get(
-			'/getCommentsByPostId/:postId',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await getCommentsByPostId(req.params.postId)
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.put(
-			'/updateComment',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await updateComment({
-					commentId: req.body.commentId,
-					userId: req.body.userId,
-					commentContent: req.body.commentContent,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.delete(
-			'/deleteComment/:commentId/:userId',
-			authenticateApp,
-			authenticateToken,
-			async (req, res) => {
-				const response = await deleteComment({
-					commentId: req.params.commentId,
-					userId: req.params.userId,
-				})
-				res.status(response.status).json(response.item)
-			},
-		)
-
-		app.post(
-			'/reallocateClass',
-			authenticateApp,
-			authenticateToken,
-			staffOnly,
-			async (req, res) => {
 				try {
-					console.log('Received reallocation request:', req.body)
-
+					console.log('Received class reallocation request:', req.body)
+					
 					const response = await reallocateClass({
 						classId: req.body.classId,
-						tutorId: req.body.tutorId,
-						studentId: req.body.studentId,
-						className: req.body.className,
+						newTutorId: req.body.newTutorId,
+						newStudentId: req.body.newStudentId
 					})
-
-					// Emit dashboard update event
+					
+					// Emit dashboard update event if successful
 					if (response.status === 200) {
-						// Use the full class details included in the response
-						const classData = response.item.updatedClass
-
-						if (classData) {
-							Log(
-								`Class reallocation successful for class ID ${req.body.classId}`,
-							)
-
-							// Emit detailed update event with full class data
-							io.to('dashboard').emit('dashboardUpdate', {
-								type: 'reallocateClass',
-								data: classData,
-								changes: {
-									tutorId: req.body.tutorId,
-									studentId: req.body.studentId,
-									className: req.body.className,
-								},
-							})
-
-							Log(
-								`Dashboard socket update emitted for class reallocation: ${req.body.classId}`,
-							)
-						} else {
-							// Fallback to send a refresh request if class data is missing
-							io.to('dashboard').emit('dashboardUpdate', {
-								type: 'reallocateClass',
-								data: { refresh: true },
-							})
-
-							Log(
-								`Failed to get updated class details, sent refresh signal instead`,
-							)
-						}
+						Log(`Class reallocation successful for class ID ${req.body.classId}`)
+						
+						// Notify all clients watching the dashboard
+						io.to('dashboard').emit('dashboardUpdate', {
+							type: 'reallocateClass',
+							data: { refresh: true },
+							timestamp: new Date().toISOString()
+						})
+						
+						Log(`Dashboard socket update emitted for class reallocation: ${req.body.classId}`)
 					} else {
 						Log(
 							`Class reallocation failed for class ID ${req.body.classId}: ${
 								response.item?.error || 'Unknown error'
-							}`,
+							}`
 						)
 					}
-
-					res.status(response.status).json(response.item)
+					
+					res.status(response.status).json(response)
 				} catch (error) {
-					console.error('Error in reallocateClass endpoint:', error)
-					res
-						.status(500)
-						.json({ error: error.message || 'Internal server error' })
+					console.error('Error in class/reallocate endpoint:', error)
+					res.status(500).json({ 
+						item: { 
+							error: error.message || 'Internal server error',
+							success: false
+						} 
+					})
 				}
 			},
 		)
@@ -607,6 +479,22 @@ connectToDatabase()
 						.status(500)
 						.json({ error: error.message || 'Internal server error' })
 				}
+			},
+		)
+
+		// Posts and Comments endpoints
+		app.post(
+			'/createPost',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await createPost({
+					userId: req.body.userId,
+					classId: req.body.classId,
+					title: req.body.title,
+					postContent: req.body.postContent,
+				})
+				res.status(response.status).json(response.item)
 			},
 		)
 

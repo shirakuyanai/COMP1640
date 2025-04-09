@@ -5,7 +5,7 @@ export const newMeetingSchema = z
 		classId: z.string().min(1, 'Required'),
 		meetingDate: z.string().min(1, 'Required'),
 		meetingType: z.string().min(1, 'Required'),
-		meetingNote: z.string(),
+		meetingNotes: z.string(),
 		meetingLink: z.string().optional(),
 		location: z.string().optional(),
 		studentAttended: z.number().default(0),

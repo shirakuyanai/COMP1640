@@ -14,6 +14,8 @@ function LoginPage() {
 			if (!isLoading && currentUser && authToken) {
 				if (currentUser.role === 'staff') {
 					navigate('/staff')
+				} else if (currentUser.role === 'admin') {
+					navigate('/home')
 				} else {
 					navigate('/')
 				}

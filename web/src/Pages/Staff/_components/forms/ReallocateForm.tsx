@@ -160,7 +160,7 @@ function ReallocateForm() {
 			
 			const result = await reallocateClass(authToken, formData);
 			
-			if (result.success) {
+			if (result && result.success) {
 				// Refresh the classes data to get the latest changes
 				const updatedClassesData = await getAllClasses(authToken);
 				

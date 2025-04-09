@@ -1,5 +1,5 @@
 import { getMeetingsOfAClass } from '@/actions/getData'
-import { updateMeetingAttendance } from '@/actions/postData'
+import { deleteMeeting, updateMeetingAttendance } from '@/actions/postData'
 import { Button } from '@/Components/ui/button'
 import { Form, FormField } from '@/Components/ui/form'
 import { Input } from '@/Components/ui/input'
@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useParams, useNavigate, Navigate } from 'react-router-dom'
 import { z } from 'zod'
-import { FaCalendarAlt, FaVideo, FaMapMarkerAlt, FaClock, FaExternalLinkAlt, FaPlus, FaCheck, FaTimes } from 'react-icons/fa'
+import { FaCalendarAlt, FaVideo, FaMapMarkerAlt, FaClock, FaExternalLinkAlt, FaPlus, FaCheck, FaTimes, FaTrashAlt } from 'react-icons/fa'
 import { Card, CardHeader, CardContent, CardTitle } from '@/Components/ui/card'
 import { format, isValid, parseISO } from 'date-fns'
 import { toast } from '@/Components/ui/use-toast'
@@ -47,8 +47,7 @@ interface TooltipTriggerProps extends TooltipProps {
 const TooltipProvider = ({ children }: TooltipProps) => children;
 const Tooltip = ({ children }: TooltipProps) => children;
 const TooltipTrigger = ({ children, asChild, ...props }: TooltipTriggerProps) => {
-	// If asChild is true, we clone the element with props
-	// Otherwise, we wrap it in a div
+
 	if (asChild && React.isValidElement(children)) {
 		return React.cloneElement(children, props);
 	}
@@ -172,6 +171,35 @@ function MeetingPage() {
 		}
 	}
 
+	const handleDeleteMeeting = async (meetingId: string) => {
+		if (!confirm('Are you sure you want to delete this meeting? This action cannot be undone.')) {
+			return;
+		}
+		
+		try {
+			setIsLoading(true);
+			const result = await deleteMeeting(meetingId, authToken);
+			
+			toast({
+				title: "Success!",
+				description: result.message || "Meeting deleted successfully.",
+				variant: "default",
+			});
+			
+			// Refresh the meetings list
+			await getMeetings();
+		} catch (error: any) {
+			console.error('Error deleting meeting:', error);
+			toast({
+				title: "Error",
+				description: error.message || "Failed to delete meeting. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		getMeetings()
 	}, [])
@@ -250,10 +278,11 @@ function MeetingPage() {
 				</div>
 				<Button 
 					className='bg-indigo-600 hover:bg-indigo-700 transition-all'
+					onClick={() => navigate(`/dashboard/classes/${id}/meetings/newMeeting`)}
 				>
-					<Link to={`/dashboard/classes/${id}/meetings/new`} className="flex items-center gap-2">
+					<span className="flex items-center gap-2">
 						<FaPlus className="h-3 w-3" /> New Meeting
-					</Link>
+					</span>
 				</Button>
 			</div>
 
@@ -278,10 +307,11 @@ function MeetingPage() {
 						<p className='text-gray-500 mb-6 max-w-md'>There are no meetings scheduled for this class yet. Create a new meeting to get started.</p>
 						<Button 
 							className='bg-indigo-600 hover:bg-indigo-700'
+							onClick={() => navigate(`/dashboard/classes/${id}/meetings/newMeeting`)}
 						>
-							<Link to={`/dashboard/classes/${id}/meetings/new`} className="flex items-center gap-2">
+							<span className="flex items-center gap-2">
 								<FaPlus className="h-3 w-3" /> Schedule First Meeting
-							</Link>
+							</span>
 						</Button>
 					</div>
 				) : (
@@ -297,6 +327,7 @@ function MeetingPage() {
 											<th className='px-6 py-3 text-left'>NOTES</th>
 											<th className='px-6 py-3 text-left'>LINK/LOCATION</th>
 											<th className='px-6 py-3 text-left'>ATTENDANCE</th>
+											<th className='px-6 py-3 text-left'>ACTIONS</th>
 										</tr>
 									</thead>
 									<tbody className='divide-y divide-gray-100'>
@@ -383,6 +414,16 @@ function MeetingPage() {
 																</select>
 															)}
 														/>
+													</td>
+													<td className='px-6 py-4'>
+														<Button
+															variant="destructive"
+															size="sm"
+															className="bg-red-600 hover:bg-red-700"
+															onClick={() => handleDeleteMeeting(meeting.meetingId)}
+														>
+															<FaTrashAlt className="h-3 w-3" />
+														</Button>
 													</td>
 												</tr>
 											)
