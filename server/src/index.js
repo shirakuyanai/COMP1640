@@ -49,6 +49,7 @@ import {
 	getAllClasses,
 	deleteClass,
 	updateClass,
+	getClassDetailForSysAdmin,
 } from './db/class.js'
 import { getLoggedInUser, getUserPublicInfoById } from './db/user.js'
 import {
@@ -241,6 +242,19 @@ connectToDatabase()
 			authenticateToken,
 			async (req, res) => {
 				const response = await getUserPublicInfoById(req.params.userId)
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.get(
+			'/getClassDetailForSysAdmin/:classId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await getClassDetailForSysAdmin({
+					classId: req.params.classId,
+					userId: req.params.userId,
+				})
 				res.status(response.status).json(response.item)
 			},
 		)

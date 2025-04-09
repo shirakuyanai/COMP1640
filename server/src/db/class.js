@@ -8,6 +8,8 @@ import User from '../schema/User.js'
 import { sendMail } from '../lib/mailer.js'
 import { deleteMeetingsByClassId } from './meeting.js'
 import { deletePostsByClassId } from './post.js'
+import { Meeting } from '../schema/Meeting.js'
+import Post from '../schema/Post.js'
 
 export const getAllStudents = async () => {
 	try {
@@ -569,6 +571,100 @@ async function getFullClassDetails(classId) {
 	} catch (error) {
 		console.error('Error in getFullClassDetails:', error)
 		return null
+	}
+}
+
+export const getClassDetailForSysAdmin = async ({ classId, userId }) => {
+	try {
+		if (!classId || !userId) {
+			logError('get class detail for sys admin', 'Missing required fields')
+			return { status: 400, error: 'Missing required fields' }
+		}
+
+		// Get class
+		const found_class = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+			.limit(1)
+
+		if (!found_class || found_class.length === 0) {
+			logError('get class detail for sys admin', 'Class not found')
+			return { status: 404, error: 'Class not found' }
+		}
+
+		// get student
+		const student = await db
+			.select()
+			.from(Student)
+			.where(eq(Student.studentId, found_class[0].studentId))
+
+		if (!student || student.length === 0) {
+			logError('get class detail for sys admin', 'Student not found')
+			return { status: 404, error: 'Student not found' }
+		}
+
+		const student_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, student[0].userId))
+		if (!student_user || student_user.length === 0) {
+			logError('get class detail for sys admin', 'Student user not found')
+			return { status: 404, error: 'Student user not found' }
+		}
+
+		// get tutor
+		const tutor = await db
+			.select()
+			.from(Tutor)
+			.where(eq(Tutor.tutorId, found_class[0].tutorId))
+		if (!tutor || tutor.length === 0) {
+			logError('get class detail for sys admin', 'Tutor not found')
+			return { status: 404, error: 'Tutor not found' }
+		}
+		const tutor_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, tutor[0].userId))
+		if (!tutor_user || tutor_user.length === 0) {
+			logError('get class detail for sys admin', 'Tutor user not found')
+			return { status: 404, error: 'Tutor user not found' }
+		}
+
+		// get meetings
+		const meetings = await db
+			.select()
+			.from(Meeting)
+			.where(eq(Meeting.classId, classId))
+
+		// get posts
+		const posts = await db.select().from(Post).where(eq(Post.classId, classId))
+
+		// get messages
+		const messages = await db
+			.select()
+			.from(Meeting)
+			.where(eq(Meeting.classId, classId))
+
+		Log('got class detail for sys admin')
+
+		return {
+			status: 200,
+			item: {
+				className: found_class[0].name,
+				student: student_user[0].username,
+				tutor: tutor_user[0].username,
+				startDate: found_class[0].startDate,
+				endDate: found_class[0].endDate,
+				description: found_class[0].description,
+				meetings: meetings ? meetings.length : 0,
+				posts: posts ? posts.length : 0,
+				messages: messages ? messages.length : 0,
+			},
+		}
+	} catch (err) {
+		logError('get class detail for sys admin', err)
+		return { status: 500, error: err }
 	}
 }
 

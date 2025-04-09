@@ -72,9 +72,40 @@ export const getUserPublicInfoById = async ({
 	userId,
 }: {
 	token: string
-	userId?: string
+	userId: string
 }) => {
 	const url = `${import.meta.env.VITE_HOST}/getUserPublicInfoById/${userId}`
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authentication: `Bearer ${token}`,
+			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+		},
+	}
+
+	const response = await fetch(url, options)
+	const data = await response.json()
+
+	if (response.status !== 200) {
+		return null
+	}
+	return data
+}
+
+export const getClassDetailForSysAdmin = async ({
+	token,
+	userId,
+	classId,
+}: {
+	token: string
+	userId: string
+	classId: string
+}) => {
+	const url = `${
+		import.meta.env.VITE_HOST
+	}/getClassDetailForSysAdmin/${classId}/${userId}`
 
 	const options = {
 		method: 'GET',
