@@ -70,9 +70,11 @@ export const getConversation = async ({
 export const getMessages = async ({
 	token,
 	conversationId,
+	offset,
 }: {
 	token: string
 	conversationId?: string | null
+	offset: number
 }) => {
 	const url = `${import.meta.env.VITE_HOST}/getMessages`
 
@@ -83,7 +85,7 @@ export const getMessages = async ({
 			Authentication: `Bearer ${token}`,
 			API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
 		},
-		body: JSON.stringify({ conversationId }),
+		body: JSON.stringify({ conversationId, offset }),
 	}
 
 	const response = await fetch(url, options)
@@ -151,23 +153,13 @@ export const getClassesForUser = async ({
 			},
 		}
 
-		console.log('Fetching classes with options:', options)
 		const response = await fetch(url, options)
-		
+		const data = await response.json()
+
 		if (!response.ok) {
-			console.error('Failed to fetch classes:', response.status)
+			console.error('Failed to fetch classes:', data)
 			return []
 		}
-
-		let data
-		try {
-			data = await response.json()
-		} catch (error) {
-			console.error('Failed to parse response as JSON:', error)
-			return []
-		}
-
-		console.log('Classes response:', data)
 
 		// If data is an error object, return empty array
 		if (data && data.error) {
@@ -186,7 +178,6 @@ export const getClassesForUser = async ({
 		}
 
 		// If no valid data format is found, return empty array
-		console.log('No valid data format found')
 		return []
 	} catch (error) {
 		console.error('Error fetching classes:', error)
@@ -206,23 +197,13 @@ export const getAllClasses = async (token: string) => {
 			},
 		}
 
-		console.log('Fetching classes with options:', options)
 		const response = await fetch(url, options)
-		
+		const data = await response.json()
+
 		if (!response.ok) {
-			console.error('Failed to fetch classes:', response.status)
+			console.error('Failed to fetch classes:', data)
 			return []
 		}
-
-		let data
-		try {
-			data = await response.json()
-		} catch (error) {
-			console.error('Failed to parse response as JSON:', error)
-			return []
-		}
-
-		console.log('Classes response:', data)
 
 		// If data is an error object, return empty array
 		if (data && data.error) {
@@ -236,8 +217,7 @@ export const getAllClasses = async (token: string) => {
 			return []
 		}
 
-		// Return the array of classes
-		return Array.isArray(data) ? data : []
+		return data
 	} catch (error) {
 		console.error('Error fetching classes:', error)
 		return []
@@ -263,24 +243,28 @@ export const getMeetingsOfAClass = async ({
 		}
 
 		const response = await fetch(url, options)
-		
-		if (!response.ok) {
-			console.error('Failed to fetch meetings:', response.status)
-			return []
-		}
-
 		const data = await response.json()
 
-		// If data is null/undefined or has error, return empty array
-		if (!data || data.error) {
-			console.log('No data or error in response:', data)
+		if (!response.ok) {
+			console.error('Failed to fetch classes:', data)
 			return []
 		}
 
-		// Return the meetings array or empty array if no meetings
-		return Array.isArray(data) ? data : []
+		// If data is an error object, return empty array
+		if (data && data.error) {
+			console.error('Error in response:', data.error)
+			return []
+		}
+
+		// If data is null/undefined, return empty array
+		if (!data) {
+			console.log('No data returned')
+			return []
+		}
+
+		return data
 	} catch (error) {
-		console.error('Error fetching meetings:', error)
+		console.error('Error fetching classes:', error)
 		return []
 	}
 }
@@ -571,7 +555,9 @@ export const deleteComment = async ({
 	userId: string
 }) => {
 	try {
-		const url = `${import.meta.env.VITE_HOST}/deleteComment/${commentId}/${userId}`
+		const url = `${
+			import.meta.env.VITE_HOST
+		}/deleteComment/${commentId}/${userId}`
 		const options = {
 			method: 'DELETE',
 			headers: {

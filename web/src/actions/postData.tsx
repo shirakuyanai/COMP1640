@@ -8,8 +8,6 @@ export async function AddNewClass(
 	authToken: string,
 ) {
 	try {
-		console.log('Sending class data:', formData)
-
 		const response = await fetch(`${import.meta.env.VITE_HOST}/addNewClass`, {
 			method: 'POST',
 			headers: {
@@ -21,7 +19,6 @@ export async function AddNewClass(
 		})
 
 		const data = await response.json()
-		console.log('Response:', response.status, data)
 
 		if (!response.ok) {
 			throw new Error(data.error || 'Failed to create class')
@@ -115,14 +112,8 @@ export async function reallocateClass(
 	}: { classId: string; newStudentId?: string; newTutorId?: string },
 ) {
 	try {
-		console.log('Sending reallocation request:', {
-			classId,
-			newStudentId,
-			newTutorId,
-		})
-
 		const response = await fetch(
-			`${import.meta.env.VITE_HOST}/reallocateClass`,
+			`${import.meta.env.VITE_HOST}/class/reallocate`,
 			{
 				method: 'POST',
 				headers: {
@@ -130,22 +121,17 @@ export async function reallocateClass(
 					Authentication: `Bearer ${authToken}`,
 					API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
 				},
-				body: JSON.stringify({ 
-					classId, 
-					tutorId: newTutorId,
-					studentId: newStudentId 
-				}),
+				body: JSON.stringify({ classId, newStudentId, newTutorId }),
 			},
 		)
 
 		const data = await response.json()
-		console.log('Reallocation response:', data)
 
 		if (!response.ok) {
-			throw new Error(data.error || data.message || 'Failed to reallocate class')
+			throw new Error(data.item?.error || 'Failed to reallocate class')
 		}
 
-		return data
+		return data.item
 	} catch (error) {
 		console.error('Error in reallocateClass:', error)
 		throw error

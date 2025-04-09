@@ -21,13 +21,14 @@ let mailTransporter = nodemailer.createTransport({
  * @param {string} success - Message after success
  * @returns {Promise<{status: number, item: any}>} - Returns a message after success or error
  */
-export const sendMail = async (recipient, content, subject, success) => {
+export const sendMail = async ({ recipient, content, subject, success }) => {
 	try {
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 		let details = {
 			from: process.env.GMAIL_USER,
 			to: recipient,
 			subject,
-			content,
+			html: content,
 		}
 
 		const results = new Promise(async (resolve, reject) => {
@@ -46,5 +47,7 @@ export const sendMail = async (recipient, content, subject, success) => {
 		return results
 	} catch (err) {
 		return { status: 500, item: logError('send an email', err) }
+	} finally {
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1'
 	}
 }

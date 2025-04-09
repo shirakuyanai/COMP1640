@@ -40,7 +40,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 		} else {
 			setCurrentClass(found_class)
 		}
-		
+
 		const found_conversation = await getConversation({
 			token: authToken,
 			classId: params.id ?? '',
@@ -52,6 +52,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 			const found_messages = await getMessages({
 				token: authToken,
 				conversationId: found_conversation.id,
+				offset: 0,
 			})
 
 			if (found_messages) setMessages(found_messages)
@@ -136,8 +137,9 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 
 							{messages.length > 0 &&
 								messages.map((message, i) => {
-									const key = message.messageId || `message-${i}-${message.sendDate}`;
-									
+									const key =
+										message.messageId || `message-${i}-${message.sendDate}`
+
 									return message.senderId === currentUser.id ? (
 										<div
 											className='flex justify-end space-x-2'
@@ -155,7 +157,10 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 											</div>
 										</div>
 									) : (
-										<div className='flex items-start space-x-2' key={key}>
+										<div
+											className='flex items-start space-x-2'
+											key={key}
+										>
 											<img
 												src='https://storage.googleapis.com/a1aa/image/dh0AmYifcf0VudUDHtqN8bwFEwYDcelC5fhSHMFLOYQ.jpg'
 												alt='Patrick Hendricks'
@@ -172,7 +177,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 												</div>
 											</div>
 										</div>
-									);
+									)
 								})}
 						</div>
 					</div>
@@ -196,7 +201,7 @@ const MessagePage = ({ found_class }: { found_class: any }) => {
 								title='Send message'
 								className='ml-2 bg-blue-500 text-white p-1 md:p-2 rounded-lg'
 							>
-								<FaPaperPlane className="h-4 w-4 md:h-5 md:w-5" />
+								<FaPaperPlane className='h-4 w-4 md:h-5 md:w-5' />
 							</button>
 						</div>
 					</form>
