@@ -14,7 +14,11 @@ function Layout() {
 				if (!currentUser || !authToken) {
 					navigate('/login')
 				} else {
-					if (currentUser.role === 'staff') navigate('/staff')
+					if (currentUser.role === 'staff') {
+						navigate('/staff')
+					} else if (currentUser.role === 'system admin') {
+						navigate('/admin')
+					}
 				}
 			}
 		} catch (err) {
@@ -27,14 +31,13 @@ function Layout() {
 	if (isLoading || !authToken) return <div>Loading...</div>
 
 	return (
-		<div className='bg-accent/5 min-h-screen'>
-			<div className='flex flex-col'>
-				<div className='flex w-full md:w-64 border border-l-0 border-t-0 h-fit md:h-screen fixed sm:top-0 sm:left-0 md:right-0 border-gray-300 gap-4 m-0 p-0 bg-white'>
-					<Sidebar />
-				</div>
-
-				<div className='flex-1 md:ml-64 mt-20 md:mt-0 bg-gray-50'>
-					<Outlet />
+		<div className='min-h-screen bg-gradient-to-br from-purple-50 to-blue-50'>
+			<div className='flex flex-col md:flex-row'>
+				<Sidebar />
+				<div className='flex-1 md:ml-64 container py-3 px-2 md:py-6 md:px-8'>
+					<div className='bg-white rounded-xl shadow-sm border border-gray-100 min-h-[calc(100vh-1.5rem)] md:min-h-[calc(100vh-3rem)]'>
+						<Outlet />
+					</div>
 				</div>
 			</div>
 		</div>

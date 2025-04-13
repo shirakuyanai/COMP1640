@@ -131,7 +131,7 @@ export async function reallocateClass(
 			throw new Error(data.item?.error || 'Failed to reallocate class')
 		}
 
-		return data.item
+		return data.item || data
 	} catch (error) {
 		console.error('Error in reallocateClass:', error)
 		throw error
@@ -187,7 +187,37 @@ export async function updateMeetingAttendance(
 		const data = await response.json()
 
 		if (!response.ok) {
-			throw new Error(data.error || 'Failed to create class')
+			throw new Error(data.error || 'Failed to update meeting attendance')
+		}
+
+		return data
+	} catch (error) {
+		console.error('Fetch error:', error)
+		throw error
+	}
+}
+
+export async function deleteMeeting(
+	meetingId: string,
+	authToken: string,
+) {
+	try {
+		const response = await fetch(
+			`${import.meta.env.VITE_HOST}/deleteMeeting/${meetingId}`,
+			{
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					Authentication: `Bearer ${authToken}`,
+					API: 'X-Api-Key ' + import.meta.env.VITE_APIKEY,
+				},
+			},
+		)
+
+		const data = await response.json()
+
+		if (!response.ok) {
+			throw new Error(data.error || 'Failed to delete meeting')
 		}
 
 		return data

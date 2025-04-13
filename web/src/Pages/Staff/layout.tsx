@@ -2,7 +2,6 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import StaffSidebar from '@/Components/StaffSidebar'
 import { useEffect, useState } from 'react'
 import { useGlobalState } from '@/misc/GlobalStateContext'
-import { getCurrentUser } from '@/actions/getData'
 
 function StaffLayout() {
 	const { currentUser, isLoading, setIsLoading, authToken } = useGlobalState()
@@ -13,8 +12,10 @@ function StaffLayout() {
 			if (!isLoading) {
 				if (!currentUser || !authToken) {
 					navigate('/login')
-				} else {
-					if (currentUser.role !== 'staff') navigate('/')
+				} else if (currentUser.role === 'system admin') {
+					navigate('/admin')
+				} else if (currentUser.role !== 'staff') {
+					navigate('/')
 				}
 			}
 		} catch (err) {
@@ -27,13 +28,10 @@ function StaffLayout() {
 	if (isLoading || !authToken) return <div>Loading...</div>
 
 	return (
-		<div className='bg-accent/5 min-h-screen'>
-			<div className='flex flex-col'>
-				<div className='flex w-full md:w-64 border border-l-0 border-t-0 h-fit md:h-screen fixed sm:top-0 sm:left-0 md:right-0 border-gray-300 gap-4 m-0 p-0 bg-white'>
-					<StaffSidebar />
-				</div>
-
-				<div className='flex-1 md:ml-64 mt-20 md:mt-0 bg-gray-50'>
+		<div className='min-h-screen bg-gray-50'>
+			<div className='flex flex-col md:flex-row'>
+				<StaffSidebar />
+				<div className='flex-1 md:ml-64 container py-3 px-2 md:py-4 md:px-6 transition-all'>
 					<Outlet />
 				</div>
 			</div>

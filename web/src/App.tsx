@@ -1,7 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+} from 'react-router-dom'
 import Layout from './Pages/layout'
 import LoginPage from './Pages/LoginPage'
-import HomePage from './Pages/HomePage'
+import HomePage from './Pages/AdminPage'
 import OverViewPage from './Pages/Overview'
 import ClassesPage from './Pages/Classes'
 import NotFound from '@/Components/NotFound'
@@ -14,6 +19,9 @@ import ClassPage from './Pages/Classes/ClassPage'
 import { Toaster } from '@/Components/ui/toaster'
 import MeetingPage from './Pages/Staff/Class/MeetingPage'
 import NewMeeting from './Pages/Staff/Class/MeetingPage/NewMeeting'
+import Schedule from './Pages/Schedule'
+import ViewUserPublicInfo from './Pages/ViewUserPublicInfo'
+import AdminRoute from './Components/AdminRoute'
 
 function App() {
 	return (
@@ -29,12 +37,26 @@ function App() {
 						path='/login'
 						element={<LoginPage />}
 					/>
+					<Route
+						index
+						path='/user/view/:userId'
+						element={<ViewUserPublicInfo />}
+					/>
+					<Route
+						path='/admin'
+						element={
+							<AdminRoute>
+								<HomePage />
+							</AdminRoute>
+						}
+					/>
 					<Route element={<Layout />}>
 						<Route
 							index
 							path='/'
-							element={<HomePage />}
+							element={<OverViewPage />}
 						/>
+
 						<Route
 							path='/dashboard/overview'
 							element={<OverViewPage />}
@@ -45,6 +67,13 @@ function App() {
 							path='/dashboard/classes'
 							element={<ClassesPage />}
 						/>
+
+						<Route
+							index
+							path='/dashboard/schedule'
+							element={<Schedule />}
+						/>
+
 						<Route
 							index
 							path='/dashboard/classes/:id'
@@ -59,20 +88,32 @@ function App() {
 							element={<NewMeeting />}
 						/>
 					</Route>
+
+					{/* Staff routes */}
 					<Route element={<StaffLayout />}>
-						<Route
-							path='/staff'
-							element={<StaffDashboardPage />}
-						/>
-						<Route
-							path='/staff/classes/new'
-							element={<AddClass />}
-						/>
-						<Route
-							path='/staff/reallocate'
-							element={<ReallocatePage />}
-						/>
+						<Route path='/staff'>
+							<Route
+								index
+								element={<StaffDashboardPage />}
+							/>
+							<Route path='classes'>
+								<Route
+									path='new'
+									element={<AddClass />}
+								/>
+							</Route>
+							<Route
+								path='reallocate'
+								element={<ReallocatePage />}
+							/>
+						</Route>
 					</Route>
+
+					{/* Catch-all route for 404 */}
+					<Route
+						path='*'
+						element={<NotFound />}
+					/>
 				</Routes>
 				<Toaster />
 			</Router>

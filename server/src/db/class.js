@@ -6,6 +6,10 @@ import Tutor from '../schema/Tutor.js'
 import { Log, logError } from '../lib/logger.js'
 import User from '../schema/User.js'
 import { sendMail } from '../lib/mailer.js'
+import { deleteMeetingsByClassId } from './meeting.js'
+import { deletePostsByClassId } from './post.js'
+import { Meeting } from '../schema/Meeting.js'
+import Post from '../schema/Post.js'
 
 export const getAllStudents = async () => {
 	try {
@@ -38,73 +42,66 @@ export async function getAllClasses() {
 				className: Class.className,
 				studentId: Class.studentId,
 				tutorId: Class.tutorId,
-				description: Class.description,
 				startDate: Class.startDate,
 				endDate: Class.endDate,
-				schedule: Class.schedule,
-				meetingLink: Class.meetingLink,
 			})
 			.from(Class)
-			.execute()
 
-		if (!classes) {
-			console.error('No classes found')
-			return {
-				status: 200,
-				item: [],
-			}
+		if (!classes || classes.length === 0) {
+			console.log('No classes found')
+			return { status: 200, item: [] }
 		}
 
-		// Get student and tutor details for each class
-		const classesWithDetails = await Promise.all(
-			classes.map(async (classItem) => {
-				try {
-					// Get student details with username from User table
-					const student = await db
-						.select({
-							username: User.username,
-						})
-						.from(Student)
-						.innerJoin(User, eq(Student.userId, User.userId))
-						.where(eq(Student.studentId, classItem.studentId))
-						.execute()
+		// Get all unique student and tutor IDs from the classes
+		const studentIds = [...new Set(classes.map((c) => c.studentId))]
+		const tutorIds = [...new Set(classes.map((c) => c.tutorId))]
 
-					// Get tutor details with username from User table
-					const tutor = await db
-						.select({
-							username: User.username,
-						})
-						.from(Tutor)
-						.innerJoin(User, eq(Tutor.userId, User.userId))
-						.where(eq(Tutor.tutorId, classItem.tutorId))
-						.execute()
+		let students = []
+		let tutors = []
 
-					return {
-						...classItem,
-						studentUsername: student[0]?.username || 'Unknown',
-						tutorUsername: tutor[0]?.username || 'Unknown',
-					}
-				} catch (error) {
-					console.error('Error getting details for class:', classItem.id, error)
-					return {
-						...classItem,
-						studentUsername: 'Unknown',
-						tutorUsername: 'Unknown',
-					}
-				}
-			}),
+		// Only fetch if we have IDs to fetch
+		if (studentIds.length > 0) {
+			students = await db
+				.select({
+					studentId: Student.studentId,
+					username: User.username,
+				})
+				.from(Student)
+				.innerJoin(User, eq(Student.userId, User.userId))
+				.where(inArray(Student.studentId, studentIds))
+		}
+
+		if (tutorIds.length > 0) {
+			tutors = await db
+				.select({
+					tutorId: Tutor.tutorId,
+					username: User.username,
+				})
+				.from(Tutor)
+				.innerJoin(User, eq(Tutor.userId, User.userId))
+				.where(inArray(Tutor.tutorId, tutorIds))
+		}
+
+		// Create lookup maps
+		const studentMap = Object.fromEntries(
+			students.map((s) => [s.studentId, s.username]),
+		)
+		const tutorMap = Object.fromEntries(
+			tutors.map((t) => [t.tutorId, t.username]),
 		)
 
-		return {
-			status: 200,
-			item: classesWithDetails || [],
-		}
+		// Map the classes with usernames
+		const classesWithUsernames = classes.map((classItem) => ({
+			...classItem,
+			studentUsername: studentMap[classItem.studentId] || 'Unknown Student',
+			tutorUsername: tutorMap[classItem.tutorId] || 'Unknown Tutor',
+		}))
+
+		return { status: 200, item: classesWithUsernames }
 	} catch (error) {
 		console.error('Error in getAllClasses:', error)
-		return {
-			status: 500,
-			item: { error: error.message || 'Failed to fetch classes' },
-		}
+		logError('get all classes', error)
+		return { status: 500, error: `Server error: ${error.message}` }
 	}
 }
 
@@ -300,11 +297,8 @@ export const addNewClass = async ({
 	studentId,
 	tutorId,
 	className,
-	description,
 	startDate,
 	endDate,
-	schedule,
-	meetingLink,
 }) => {
 	try {
 		// Validate required fields
@@ -363,22 +357,12 @@ export const addNewClass = async ({
 			}
 		}
 
-		// Validate schedule if provided
-		if (schedule) {
-			if (!Array.isArray(schedule.days) || !Array.isArray(schedule.times)) {
-				return { status: 400, error: 'Invalid schedule format' }
-			}
-		}
-
 		const values = {
 			studentId,
 			tutorId,
 			className,
-			description: description || null,
 			startDate: startDate ? new Date(startDate) : null,
 			endDate: endDate ? new Date(endDate) : null,
-			schedule: schedule || null,
-			meetingLink: meetingLink || null,
 		}
 
 		try {
@@ -420,8 +404,12 @@ export const addNewClass = async ({
 
 export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 	try {
-		if (!classId || !newStudentId || !newTutorId)
-			return { status: 400, item: { error: 'Missing required fields' } }
+		if (!classId)
+			return { status: 400, item: { error: 'Missing required class ID' } }
+		
+		// At least one of the two fields (newStudentId or newTutorId) must be provided
+		if (!newStudentId && !newTutorId)
+			return { status: 400, item: { error: 'At least one of newStudentId or newTutorId must be provided' } }
 
 		let studentUser = null
 		let tutorUser = null
@@ -460,6 +448,21 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			if (!studentUser || studentUser.length === 0) {
 				return { status: 404, item: { error: 'Student not found' } }
 			}
+		} else {
+			// If not changing student, get the current one for email notification
+			const student = await db
+				.select()
+				.from(Student)
+				.where(eq(Student.studentId, existingClass[0].studentId))
+				.execute()
+				
+			if (student && student.length > 0) {
+				studentUser = await db
+					.select()
+					.from(User)
+					.where(eq(User.userId, student[0].userId))
+					.execute()
+			}
 		}
 
 		if (newTutorId) {
@@ -484,6 +487,21 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			if (!tutorUser || tutorUser.length === 0) {
 				return { status: 404, item: { error: 'Tutor not found' } }
 			}
+		} else {
+			// If not changing tutor, get the current one for email notification
+			const tutor = await db
+				.select()
+				.from(Tutor)
+				.where(eq(Tutor.tutorId, existingClass[0].tutorId))
+				.execute()
+				
+			if (tutor && tutor.length > 0) {
+				tutorUser = await db
+					.select()
+					.from(User)
+					.where(eq(User.userId, tutor[0].userId))
+					.execute()
+			}
 		}
 
 		// If no updates are provided
@@ -507,18 +525,25 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 			<p>You have been successfully reallocated to this class: ${result[0].className}</p>
 		`
 
-		await sendMail({
-			recipient: studentUser[0].email,
-			content: emailContent,
-			subject: 'Class reallocation notice',
-			success: true,
-		})
-		await sendMail({
-			recipient: tutorUser[0].email,
-			content: emailContent,
-			subject: 'Class reallocation notice',
-			success: true,
-		})
+		// Send emails to both the student and tutor
+		if (studentUser && studentUser.length > 0) {
+			await sendMail({
+				recipient: studentUser[0].email,
+				content: emailContent,
+				subject: 'Class reallocation notice',
+				success: true,
+			})
+		}
+		
+		if (tutorUser && tutorUser.length > 0) {
+			await sendMail({
+				recipient: tutorUser[0].email,
+				content: emailContent,
+				subject: 'Class reallocation notice',
+				success: true,
+			})
+		}
+		
 		return {
 			status: 200,
 			item: {
@@ -534,5 +559,270 @@ export async function reallocateClass({ classId, newStudentId, newTutorId }) {
 				error: error.message || 'Failed to reallocate class',
 			},
 		}
+	}
+}
+
+// Helper function to get full class details including usernames
+async function getFullClassDetails(classId) {
+	try {
+		// Get the class data
+		const classData = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+			.execute()
+
+		if (!classData || classData.length === 0) {
+			return null
+		}
+
+		const classItem = classData[0]
+
+		// Get student username
+		const studentData = await db
+			.select({
+				studentId: Student.studentId,
+				username: User.username,
+			})
+			.from(Student)
+			.innerJoin(User, eq(Student.userId, User.userId))
+			.where(eq(Student.studentId, classItem.studentId))
+			.execute()
+
+		// Get tutor username
+		const tutorData = await db
+			.select({
+				tutorId: Tutor.tutorId,
+				username: User.username,
+			})
+			.from(Tutor)
+			.innerJoin(User, eq(Tutor.userId, User.userId))
+			.where(eq(Tutor.tutorId, classItem.tutorId))
+			.execute()
+
+		// Build the full class object with usernames
+		return {
+			...classItem,
+			studentUsername:
+				studentData.length > 0 ? studentData[0].username : 'Unknown Student',
+			tutorUsername:
+				tutorData.length > 0 ? tutorData[0].username : 'Unknown Tutor',
+		}
+	} catch (error) {
+		console.error('Error in getFullClassDetails:', error)
+		return null
+	}
+}
+
+export const getClassDetailForSysAdmin = async ({ classId, userId }) => {
+	try {
+		if (!classId || !userId) {
+			logError('get class detail for sys admin', 'Missing required fields')
+			return { status: 400, error: 'Missing required fields' }
+		}
+
+		// Get class
+		const found_class = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+			.limit(1)
+
+		if (!found_class || found_class.length === 0) {
+			logError('get class detail for sys admin', 'Class not found')
+			return { status: 404, error: 'Class not found' }
+		}
+
+		// get student
+		const student = await db
+			.select()
+			.from(Student)
+			.where(eq(Student.studentId, found_class[0].studentId))
+
+		if (!student || student.length === 0) {
+			logError('get class detail for sys admin', 'Student not found')
+			return { status: 404, error: 'Student not found' }
+		}
+
+		const student_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, student[0].userId))
+		if (!student_user || student_user.length === 0) {
+			logError('get class detail for sys admin', 'Student user not found')
+			return { status: 404, error: 'Student user not found' }
+		}
+
+		// get tutor
+		const tutor = await db
+			.select()
+			.from(Tutor)
+			.where(eq(Tutor.tutorId, found_class[0].tutorId))
+		if (!tutor || tutor.length === 0) {
+			logError('get class detail for sys admin', 'Tutor not found')
+			return { status: 404, error: 'Tutor not found' }
+		}
+		const tutor_user = await db
+			.select()
+			.from(User)
+			.where(eq(User.userId, tutor[0].userId))
+		if (!tutor_user || tutor_user.length === 0) {
+			logError('get class detail for sys admin', 'Tutor user not found')
+			return { status: 404, error: 'Tutor user not found' }
+		}
+
+		// get meetings
+		const meetings = await db
+			.select()
+			.from(Meeting)
+			.where(eq(Meeting.classId, classId))
+
+		// get posts
+		const posts = await db.select().from(Post).where(eq(Post.classId, classId))
+
+		// get messages
+		const messages = await db
+			.select()
+			.from(Meeting)
+			.where(eq(Meeting.classId, classId))
+
+		Log('got class detail for sys admin')
+
+		return {
+			status: 200,
+			item: {
+				className: found_class[0].name,
+				student: student_user[0].username,
+				tutor: tutor_user[0].username,
+				startDate: found_class[0].startDate,
+				endDate: found_class[0].endDate,
+				description: found_class[0].description,
+				meetings: meetings ? meetings.length : 0,
+				posts: posts ? posts.length : 0,
+				messages: messages ? messages.length : 0,
+			},
+		}
+	} catch (err) {
+		logError('get class detail for sys admin', err)
+		return { status: 500, error: err }
+	}
+}
+
+export const updateClass = async ({
+	classId,
+	className,
+	startDate,
+	endDate,
+}) => {
+	try {
+		console.log('Updating class:', { classId, className, startDate, endDate })
+
+		// Validate class exists
+		const existingClass = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+
+		if (!existingClass || existingClass.length === 0) {
+			return { status: 404, error: 'Class not found' }
+		}
+
+		// Validate dates if provided
+		if (startDate && endDate) {
+			const start = new Date(startDate)
+			const end = new Date(endDate)
+			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+				return { status: 400, error: 'Invalid date format' }
+			}
+			if (start > end) {
+				return { status: 400, error: 'Start date must be before end date' }
+			}
+		}
+
+		// Build update object
+		const updateData = {
+			...(className && { className }),
+			...(startDate && { startDate: new Date(startDate) }),
+			...(endDate && { endDate: new Date(endDate) }),
+		}
+
+		// Update the class
+		const updatedClass = await db
+			.update(Class)
+			.set(updateData)
+			.where(eq(Class.id, classId))
+			.returning()
+
+		if (!updatedClass || updatedClass.length === 0) {
+			return { status: 500, error: 'Failed to update class' }
+		}
+
+		Log('class updated')
+		return { status: 200, item: updatedClass[0] }
+	} catch (error) {
+		console.error('Error in updateClass:', error)
+		logError('update class', error)
+		return { status: 500, error: error.message || 'Failed to update class' }
+	}
+}
+
+export const deleteClass = async ({ classId }) => {
+	try {
+		console.log('Deleting class:', classId)
+
+		// Validate class exists
+		const existingClass = await db
+			.select()
+			.from(Class)
+			.where(eq(Class.id, classId))
+
+		if (!existingClass || existingClass.length === 0) {
+			return { status: 404, error: 'Class not found' }
+		}
+
+		// Delete related meetings
+		const meetingsResult = await deleteMeetingsByClassId(classId)
+		if (meetingsResult.status !== 200) {
+			console.error(
+				'Failed to delete meetings for class:',
+				meetingsResult.error,
+			)
+			return { status: 500, error: 'Failed to delete meetings for class' }
+		}
+
+		console.log(
+			`Successfully deleted ${meetingsResult.item.count} meetings for class ${classId}`,
+		)
+
+		// Delete related posts and their comments
+		const postsResult = await deletePostsByClassId(classId)
+		if (postsResult.status !== 200) {
+			console.error('Failed to delete posts for class:', postsResult.error)
+			return { status: 500, error: 'Failed to delete posts for class' }
+		}
+
+		console.log(
+			`Successfully deleted ${postsResult.item.count} posts for class ${classId}`,
+		)
+
+		// Delete the class
+		const deletedClass = await db
+			.delete(Class)
+			.where(eq(Class.id, classId))
+			.returning()
+
+		if (!deletedClass || deletedClass.length === 0) {
+			return { status: 500, error: 'Failed to delete class' }
+		}
+
+		Log('class deleted')
+		return {
+			status: 200,
+			message: `Class deleted successfully. ${meetingsResult.item.count} related meetings and ${postsResult.item.count} related posts were also removed.`,
+		}
+	} catch (error) {
+		console.error('Error in deleteClass:', error)
+		logError('delete class', error)
+		return { status: 500, error: error.message || 'Failed to delete class' }
 	}
 }

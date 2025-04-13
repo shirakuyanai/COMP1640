@@ -8,46 +8,62 @@ import Tutor from '../schema/Tutor.js'
 export const getAllMeetingsOfAClass = async (classId) => {
 	try {
 		const meetings = await db
-			.select()
+			.select({
+				meetingId: Meeting.meetingId,
+				classId: Meeting.classId,
+				meetingDate: Meeting.meetingDate,
+				meetingType: Meeting.meetingType,
+				meetingNotes: Meeting.meetingNotes,
+				meetingLink: Meeting.meetingLink,
+				location: Meeting.location,
+				studentAttended: Meeting.studentAttended
+			})
 			.from(Meeting)
 			.where(eq(Meeting.classId, classId))
 
 		if (meetings.length === 0) {
-			logError('get all meetings of a class', 'No meetings found')
 			return {
-				status: 404,
-				item: 'No meetings found',
+				status: 200,
+				item: []
 			}
 		}
 
 		const this_class = await db
-			.select()
+			.select({
+				id: Class.id,
+				className: Class.className,
+				tutorId: Class.tutorId,
+				studentId: Class.studentId,
+				startDate: Class.startDate,
+				endDate: Class.endDate
+			})
 			.from(Class)
 			.where(eq(Class.id, classId))
 
 		if (this_class.length === 0) {
-			logError('get all meetings of a class', 'Invalid class')
 			return {
-				status: 404,
-				item: 'Invalid class',
+				status: 200,
+				item: []
 			}
 		}
 
 		const tutor = await db
-			.select()
+			.select({
+				tutorId: Tutor.tutorId
+			})
 			.from(Tutor)
 			.where(eq(Tutor.tutorId, this_class[0].tutorId))
 
 		if (tutor.length === 0) {
-			logError('get all meetings of a class', 'Invalid tutor')
 			return {
-				status: 404,
-				item: 'Invalid tutor',
+				status: 200,
+				item: []
 			}
 		}
 
 		const processed_meetings = meetings.map((meeting) => ({
 			meetingId: meeting.meetingId,
+			classId: meeting.classId,
 			meetingDate: new Date(meeting.meetingDate).toLocaleString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -57,18 +73,18 @@ export const getAllMeetingsOfAClass = async (classId) => {
 				second: '2-digit',
 			}),
 			meetingType: meeting.meetingType,
-			meetingLink: meeting.meetingLink,
-			location: meeting.location,
-			meetingNotes: meeting.meetingNotes,
-			studentAttended: meeting.studentAttended,
+			meetingLink: meeting.meetingLink || null,
+			location: meeting.location || null,
+			meetingNotes: meeting.meetingNotes || null,
+			studentAttended: meeting.studentAttended
 		}))
 
 		return { status: 200, item: processed_meetings }
 	} catch (err) {
-		logError('get all meetings of a class', err)
+		console.error('Error in getAllMeetingsOfAClass:', err)
 		return {
 			status: 500,
-			item: err,
+			item: []
 		}
 	}
 }
@@ -83,6 +99,15 @@ export const newMeeting = async ({
 	studentAttended,
 }) => {
 	try {
+		console.log({
+			classId,
+			meetingDate,
+			meetingType,
+			meetingNotes,
+			meetingLink,
+			location,
+			studentAttended,
+		})
 		const newMeeting = await db
 			.insert(Meeting)
 			.values({
@@ -142,5 +167,106 @@ export const changeMeetingAttendance = async ({ meetings }) => {
 			status: 500,
 			item: err,
 		}
+	}
+}
+
+export const deleteMeetingsByClassId = async (classId) => {
+	try {
+		// First check if there are any meetings for this class
+		const meetings = await db
+			.select({
+				meetingId: Meeting.meetingId
+			})
+			.from(Meeting)
+			.where(eq(Meeting.classId, classId));
+		
+		if (meetings.length === 0) {
+			// No meetings found for this class
+			return { 
+				status: 200, 
+				item: { 
+					message: 'No meetings to delete', 
+					count: 0 
+				} 
+			};
+		}
+
+		// Delete all meetings for this class
+		const deletedMeetings = await db
+			.delete(Meeting)
+			.where(eq(Meeting.classId, classId))
+			.returning();
+
+		return { 
+			status: 200, 
+			item: { 
+				message: 'All meetings deleted successfully', 
+				count: deletedMeetings.length 
+			} 
+		};
+	} catch (error) {
+		console.error('Error in deleteMeetingsByClassId:', error);
+		logError('delete meetings by class ID', error);
+		return {
+			status: 500,
+			error: error.message || 'Failed to delete meetings'
+		};
+	}
+}
+
+export const deleteMeetingById = async (meetingId) => {
+	try {
+		// Check if the meeting exists with more detailed data
+		const existingMeeting = await db
+			.select({
+				meetingId: Meeting.meetingId,
+				classId: Meeting.classId,
+				meetingDate: Meeting.meetingDate
+			})
+			.from(Meeting)
+			.where(eq(Meeting.meetingId, meetingId));
+		
+		if (existingMeeting.length === 0) {
+			return { 
+				status: 404, 
+				item: { 
+					message: 'Meeting not found'
+				} 
+			};
+		}
+
+		// Delete the meeting
+		const deletedMeeting = await db
+			.delete(Meeting)
+			.where(eq(Meeting.meetingId, meetingId))
+			.returning();
+
+		// Check if the meeting was actually deleted
+		if (deletedMeeting.length === 0) {
+			logError('delete meeting by ID', 'Failed to delete meeting');
+			return {
+				status: 500,
+				item: { 
+					message: 'Failed to delete meeting'
+				}
+			};
+		}
+
+		return { 
+			status: 200, 
+			item: { 
+				message: 'Meeting deleted successfully', 
+				meeting: deletedMeeting[0]
+			} 
+		};
+	} catch (error) {
+		console.error('Error in deleteMeetingById:', error);
+		logError('delete meeting by ID', error);
+		return {
+			status: 500,
+			item: { 
+				error: error.message || 'Failed to delete meeting'
+			}
+		};
 	}
 }

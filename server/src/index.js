@@ -47,13 +47,31 @@ import {
 	getDataForCreatingClass,
 	reallocateClass,
 	getAllClasses,
+	deleteClass,
+	updateClass,
+	getClassDetailForSysAdmin,
 } from './db/class.js'
-import { getLoggedInUser } from './db/user.js'
+import { getLoggedInUser, getUserPublicInfoById } from './db/user.js'
 import {
 	getConversation,
 	getMessagesOfConversation,
 	saveMessage,
 } from './db/message.js'
+
+// Import the post and comment functions
+import {
+	createPost,
+	getPostsByClassId,
+	getPostById,
+	updatePost,
+	deletePost,
+} from './db/post.js'
+import {
+	createComment,
+	getCommentsByPostId,
+	updateComment,
+	deleteComment,
+} from './db/comment.js'
 
 import { Server } from 'socket.io'
 import http from 'http'
@@ -62,6 +80,7 @@ import {
 	changeMeetingAttendance,
 	getAllMeetingsOfAClass,
 	newMeeting,
+	deleteMeetingById,
 } from './db/meeting.js'
 import client from './config/redis.config.js'
 
@@ -91,6 +110,18 @@ connectToDatabase()
 		})
 
 		io.on('connection', (socket) => {
+			// Handle dashboard connections for staff
+			socket.on('joinDashboard', () => {
+				socket.join('dashboard')
+				Log(`${socket.username} joined dashboard room`)
+			})
+
+			// Handle dashboard disconnections
+			socket.on('leaveDashboard', () => {
+				socket.leave('dashboard')
+				Log(`${socket.username} left dashboard room`)
+			})
+
 			socket.on('sendMessage', async (messageData) => {
 				if (messageData.room) {
 					const savedMessage = await saveMessage({
@@ -162,10 +193,19 @@ connectToDatabase()
 					schedule: req.body.schedule,
 					meetingLink: req.body.meetingLink,
 				})
+				// Emit dashboard update event
+				if (response.status === 200) {
+					io.to('dashboard').emit('dashboardUpdate', {
+						type: 'addClass',
+						data: response.item,
+					})
+				}
+
 				res.status(response.status).json(response.item)
 			},
 		)
-
+	})
+	.then(() => {
 		app.post(
 			'/newMeeting',
 			authenticateApp,
@@ -198,12 +238,53 @@ connectToDatabase()
 		)
 
 		app.get(
+			'/getUserPublicInfoById/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await getUserPublicInfoById(req.params.userId)
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.get(
+			'/getClassDetailForSysAdmin/:classId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await getClassDetailForSysAdmin({
+					classId: req.params.classId,
+					userId: req.params.userId,
+				})
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.get(
 			'/getMeetingsOfAClass/:classId',
 			authenticateApp,
 			authenticateToken,
 			async (req, res) => {
 				const response = await getAllMeetingsOfAClass(req.params.classId)
 				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.delete(
+			'/deleteMeeting/:meetingId',
+			authenticateApp,
+			authenticateToken,
+			studentsNotAllowed, // Only tutors should be able to delete meetings
+			async (req, res) => {
+				try {
+					const response = await deleteMeetingById(req.params.meetingId);
+					return res.status(response.status).json(response.item);
+				} catch (error) {
+					console.error('Error in deleteMeeting endpoint:', error);
+					return res.status(500).json({ 
+						error: error.message || 'Internal server error during meeting deletion'
+					});
+				}
 			},
 		)
 
@@ -247,11 +328,10 @@ connectToDatabase()
 			'/getAllClasses',
 			authenticateApp,
 			authenticateToken,
-			staffOnly,
+
 			async (req, res) => {
 				try {
 					const response = await getAllClasses()
-
 					if (!response) {
 						console.error('getAllClasses returned null/undefined')
 						return res.status(500).json({ error: 'Internal server error' })
@@ -301,8 +381,266 @@ connectToDatabase()
 			authenticateToken,
 			staffOnly,
 			async (req, res) => {
-				const response = await reallocateClass(req.body)
-				res.status(response.status || 200).json(response)
+				try {
+					console.log('Received class reallocation request:', req.body)
+					
+					const response = await reallocateClass({
+						classId: req.body.classId,
+						newTutorId: req.body.newTutorId,
+						newStudentId: req.body.newStudentId
+					})
+					
+					// Emit dashboard update event if successful
+					if (response.status === 200) {
+						Log(`Class reallocation successful for class ID ${req.body.classId}`)
+						
+						// Notify all clients watching the dashboard
+						io.to('dashboard').emit('dashboardUpdate', {
+							type: 'reallocateClass',
+							data: { refresh: true },
+							timestamp: new Date().toISOString()
+						})
+						
+						Log(`Dashboard socket update emitted for class reallocation: ${req.body.classId}`)
+					} else {
+						Log(
+							`Class reallocation failed for class ID ${req.body.classId}: ${
+								response.item?.error || 'Unknown error'
+							}`
+						)
+					}
+					
+					res.status(response.status).json(response)
+				} catch (error) {
+					console.error('Error in class/reallocate endpoint:', error)
+					res.status(500).json({ 
+						item: { 
+							error: error.message || 'Internal server error',
+							success: false
+						} 
+					})
+				}
+			},
+		)
+
+		app.put(
+			'/updateClass',
+			authenticateApp,
+			authenticateToken,
+			staffOnly,
+			async (req, res) => {
+				const response = await updateClass({
+					classId: req.body.classId,
+					className: req.body.className,
+				})
+
+				// Emit dashboard update event
+				if (response.status === 200) {
+					io.to('dashboard').emit('dashboardUpdate', {
+						type: 'updateClass',
+						data: response.item,
+					})
+				}
+
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		app.delete(
+			'/deleteClass',
+			authenticateApp,
+			authenticateToken,
+			staffOnly,
+			async (req, res) => {
+				try {
+					if (!req.body || !req.body.classId) {
+						return res.status(400).json({ error: 'classId is required' })
+					}
+
+					const response = await deleteClass({
+						classId: req.body.classId,
+					})
+
+					// Emit dashboard update event
+					if (response.status === 200) {
+						io.to('dashboard').emit('dashboardUpdate', {
+							type: 'deleteClass',
+							data: { classId: req.body.classId },
+						})
+					}
+
+					return res
+						.status(response.status)
+						.json(response.message || response.error || response.item || {})
+				} catch (error) {
+					console.error('Error in deleteClass endpoint:', error)
+					return res
+						.status(500)
+						.json({ error: error.message || 'Internal server error' })
+				}
+			},
+		)
+
+		// Posts and Comments endpoints
+		app.post(
+			'/createPost',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				const response = await createPost({
+					userId: req.body.userId,
+					classId: req.body.classId,
+					title: req.body.title,
+					postContent: req.body.postContent,
+				})
+				res.status(response.status).json(response.item)
+			},
+		)
+
+		// Get posts by class ID
+		app.get(
+			'/getPostsByClassId/:classId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getPostsByClassId(req.params.classId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getPostsByClassId endpoint:', error)
+					res.status(500).json({ message: 'Failed to get posts' })
+				}
+			},
+		)
+
+		// Get post by ID
+		app.get(
+			'/getPostById/:postId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getPostById(req.params.postId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getPostById endpoint:', error)
+					res.status(500).json({ message: 'Failed to get post' })
+				}
+			},
+		)
+
+		// Update post
+		app.put(
+			'/updatePost',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await updatePost({
+						postId: req.body.postId,
+						userId: req.body.userId,
+						title: req.body.title,
+						postContent: req.body.postContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in updatePost endpoint:', error)
+					res.status(500).json({ message: 'Failed to update post' })
+				}
+			},
+		)
+
+		// Delete post
+		app.delete(
+			'/deletePost/:postId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await deletePost({
+						postId: req.params.postId,
+						userId: req.params.userId,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in deletePost endpoint:', error)
+					res.status(500).json({ message: 'Failed to delete post' })
+				}
+			},
+		)
+
+		// Create comment
+		app.post(
+			'/createComment',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await createComment({
+						postId: req.body.postId,
+						userId: req.body.userId,
+						commentContent: req.body.commentContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in createComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to create comment' })
+				}
+			},
+		)
+
+		// Get comments by post ID
+		app.get(
+			'/getCommentsByPostId/:postId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await getCommentsByPostId(req.params.postId)
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in getCommentsByPostId endpoint:', error)
+					res.status(500).json({ message: 'Failed to get comments' })
+				}
+			},
+		)
+
+		// Update comment
+		app.put(
+			'/updateComment',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await updateComment({
+						commentId: req.body.commentId,
+						userId: req.body.userId,
+						commentContent: req.body.commentContent,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in updateComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to update comment' })
+				}
+			},
+		)
+
+		// Delete comment
+		app.delete(
+			'/deleteComment/:commentId/:userId',
+			authenticateApp,
+			authenticateToken,
+			async (req, res) => {
+				try {
+					const response = await deleteComment({
+						commentId: req.params.commentId,
+						userId: req.params.userId,
+					})
+					res.status(response.status).json(response.item)
+				} catch (error) {
+					console.error('Error in deleteComment endpoint:', error)
+					res.status(500).json({ message: 'Failed to delete comment' })
+				}
 			},
 		)
 
